@@ -1,0 +1,2 @@
+org.springframework.boot.env.EnvironmentPostProcessor=\
+post.service.be_post_service.configuration.ConfigYamlEnvironmentPostProcessor
