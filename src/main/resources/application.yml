@@ -1,0 +1,57 @@
+grpc:
+  server:
+    port: 3008
+    service-name: be-post-service
+
+spring:
+  profiles:
+    active: dev
+
+  redis:
+    host: localhost
+    port: 6379
+    password: ''
+    database: 1
+    timeout: 2000
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/post_service
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        generate_statistics: true
+        format_sql: true
+        order_inserts: true
+        order_updates: true
+        jdbc:
+          batch_size: 20
+          fetch_size: 20
+          batch_versioned_data: true
+        javax.cache:
+          provider: org.ehcache.jsr107.EhcacheCachingProvider
+          uri: classpath:ehcache.xml
+        cache:
+          use_second_level_cache: false
+          default_cache_concurrency_strategy: read-write
+          use_minimal_puts: true
+          region.factory_class: jcache
+          use_query_cache: false
+          use_structured_entries: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+    hibernate:
+      ddl-auto: update
+
+  application:
+    name: be-post-service
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: be-post-service
+    topic1: topic1

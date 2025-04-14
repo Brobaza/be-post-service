@@ -9,15 +9,12 @@ import post.service.be_post_service.configuration.Queue.KafkaProperties;
 public class ProducerService {
 
     private final KafkaTemplate<String, String> kafkaTemplate;
-    private final KafkaProperties kafkaProperties;
 
     public ProducerService(KafkaTemplate<String, String> kafkaTemplate, KafkaProperties kafkaProperties) {
         this.kafkaTemplate = kafkaTemplate;
-        this.kafkaProperties = kafkaProperties;
     }
 
-    public void sendMessage(String message) {
-        String topic = kafkaProperties.getTopics().get(0).getName();
+    public void sendMessage(String message, String topic) {
         System.out.println("Sending message to topic: " + topic);
         kafkaTemplate.send(topic, message);
     }

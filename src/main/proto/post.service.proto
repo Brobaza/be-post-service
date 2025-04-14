@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package postProtoService;
+
+option java_multiple_files = true;
+option java_package = "post.service.be_post_service.grpc";
+option java_outer_classname = "PostServiceProto";
+
+service PostService {
+    rpc TestPost(TestPostRequest) returns (TestPostResponse) {}
+}
+
+message TestPostRequest {
+    string name = 1;
+    string email = 2;
+    string message = 3;
+}
+
+message TestPostResponse {
+    string name = 1;
+    string email = 2;
+    string message = 3;
+}
