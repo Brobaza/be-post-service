@@ -40,6 +40,9 @@ public class KafkaConfiguration {
 
     @Bean
     public ConsumerFactory<String, String> consumerFactory() {
+        System.out.println("Bootstrap Servers: " + bootstrapServers);
+        System.out.println("Group ID: " + groupId);
+
         Map<String, Object> configProps = new HashMap<>();
         configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         configProps.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);

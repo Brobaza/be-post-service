@@ -3,6 +3,10 @@ grpc:
     port: 3008
     service-name: be-post-service
 
+server:
+  port: 3007
+  context-path: /api/v1
+
 spring:
   profiles:
     active: dev

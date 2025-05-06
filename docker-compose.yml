@@ -1,0 +1,18 @@
+networks:
+  global_network:
+    external: true
+
+services:
+  be-post-service:
+    container_name: be-post-service
+    build:
+      context: .
+      dockerfile: Dockerfile.debug
+    ports:
+      - "3007:3007" # REST API
+      - "3008:3008" # gRPC
+    networks:
+      - global_network
+    volumes:
+      - ./src:/app/src
+    restart: unless-stopped
