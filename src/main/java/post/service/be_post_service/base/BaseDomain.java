@@ -7,11 +7,11 @@ import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 
 @Transactional
-public abstract class BaseService<T extends BaseEntity<ID>, ID> {
+public abstract class BaseDomain<T extends BaseEntity<ID>, ID> {
 
     protected final BaseRepository<T, ID> repository;
 
-    protected BaseService(BaseRepository<T, ID> repository) {
+    protected BaseDomain(BaseRepository<T, ID> repository) {
         this.repository = repository;
     }
 

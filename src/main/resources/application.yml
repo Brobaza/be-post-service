@@ -7,6 +7,17 @@ server:
   port: 3007
   context-path: /api/v1
 
+microservices:
+  chat-service:
+    url: localhost
+    port: 3006
+  user-service:
+    url: localhost
+    port: 3004
+  auth-service:
+    url: localhost
+    port: 3002
+
 spring:
   profiles:
     active: dev

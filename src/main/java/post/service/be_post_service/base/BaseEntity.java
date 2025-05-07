@@ -1,11 +1,12 @@
 package post.service.be_post_service.base;
 
 import java.util.Date;
+import java.util.UUID;
 
-import javax.persistence.EntityListeners;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
 
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedBy;
@@ -26,7 +27,7 @@ public abstract class BaseEntity<ID> {
     @Id
     @GeneratedValue
     @UuidGenerator
-    private ID id;
+    private UUID id;
 
     private boolean isDeleted;
 
