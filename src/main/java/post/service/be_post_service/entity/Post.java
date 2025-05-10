@@ -1,5 +1,5 @@
-package post.service.be_post_service.entity;
 
+package post.service.be_post_service.entity;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -25,7 +25,9 @@ import post.service.be_post_service.base.BaseEntity;
 @Entity
 @Table(name = "posts", indexes = {
         @Index(name = "index_post_author_id", columnList = "author_id"),
-        @Index(name = "idx_post_liked_user_ids", columnList = "liked_user_ids")
+        @Index(name = "index_post_parent_id", columnList = "post_parent_id"),
+        @Index(name = "idx_post_liked_user_ids", columnList = "liked_user_ids"),
+        @Index(name = "idx_post_shared_user_ids", columnList = "shared_user_ids")
 })
 @Getter
 @Setter
@@ -39,14 +41,22 @@ public class Post extends BaseEntity<UUID> {
 
     @Column(name = "author_id", nullable = false)
     private UUID authorId;
+    @Column(name = "post_parent_id", nullable = false)
+    private UUID postParentId;
 
     @Column(name = "like_count")
     private int likeCount;
+    @Column(name = "share_count")
+    private int shareCount;
 
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "liked_user_ids", columnDefinition = "uuid[]")
     @Builder.Default
     private List<UUID> likedUserIds = new ArrayList<>();
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "shared_user_ids", columnDefinition = "uuid[]")
+    @Builder.Default
+    private List<UUID> sharedUserIds = new ArrayList<>();
 
     @Type(UUIDArrayType.class)
     @Column(name = "images", columnDefinition = "uuid[]")
