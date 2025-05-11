@@ -5,9 +5,8 @@ import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import net.devh.boot.grpc.server.service.GrpcService;
-import post.service.be_post_service.grpc.PostServiceGrpc;
-import post.service.be_post_service.grpc.TestPostRequest;
-import post.service.be_post_service.grpc.TestPostResponse;
+import post.service.be_post_service.grpc.*;
+import post.service.be_post_service.services.PostService;
 import userProtoService.UserServiceOuterClass.GetUserResponse;
 
 @GrpcService
@@ -20,6 +19,8 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
     public GrpcPostService(GrpcUserService grpcUserService) {
         this.grpcUserService = grpcUserService;
     }
+    @Autowired
+    private PostService postService;
 
     @Override
     public void testPost(TestPostRequest request, io.grpc.stub.StreamObserver<TestPostResponse> responseObserver) {
@@ -30,10 +31,25 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
                 .build();
 
         GetUserResponse userResponse = grpcUserService
-                .getUser(new StringBuilder().append(new String("253c9dc6-b65a-4c21-a5a0-85fd7ad8880c")).toString());
+                .getUser(new StringBuilder().append(new String("74cf4138-d8ef-41c1-9b97-924d920abe49")).toString());
 
         logger.info("User information: " + userResponse.getName() + ", " + userResponse.getEmail());
 
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
+    }
+    @Override
+    public void createPost(CreatePostRequest request, io.grpc.stub.StreamObserver<CreatePostResponse> responseObserver){
+        postService.createPost(request);
+        CreatePostResponse response = CreatePostResponse.newBuilder()
+                .setAuthorId(request.getAuthorId())
+                .setContent(request.getContent())
+                .addAllTaggedUserIds(request.getTaggedUserIdsList())
+                .addAllHashtags(request.getHashtagsList())
+                .addAllLinks(request.getLinksList())
+                .addAllImages(request.getImagesList())
+                .setPostParentId(request.getPostParentId())
+                .build();
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }

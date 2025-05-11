@@ -20,5 +20,8 @@ public class CommentDomain extends BaseDomain<Comment, UUID> {
     public UUID createComment(Comment comment) {
         return commentRepository.save(comment).getId();
     }
+    public Comment getParentComment(UUID id) {
+        return commentRepository.getParentComment(id);
+    }
 }
 

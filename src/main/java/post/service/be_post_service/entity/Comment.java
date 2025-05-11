@@ -33,7 +33,7 @@ public class Comment extends BaseEntity<UUID> {
 
     @Column(name = "author_id", nullable = false)
     private UUID authorId;
-    @Column(name = "comment_parent_id", nullable = false)
+    @Column(name = "comment_parent_id")
     private UUID commentParentId;
     @Column(name = "post_id", nullable = false)
     private UUID postId;

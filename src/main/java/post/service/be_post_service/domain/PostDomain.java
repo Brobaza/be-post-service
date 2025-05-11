@@ -22,4 +22,7 @@ public class PostDomain extends BaseDomain<Post, UUID> {
     public UUID createPost(Post post) {
         return postRepository.save(post).getId();
     }
+    public Post getParentPost(UUID id) {
+        return postRepository.getParentPost(id);
+    }
 }

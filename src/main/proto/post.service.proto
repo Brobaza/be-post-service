@@ -8,6 +8,41 @@ option java_outer_classname = "PostServiceProto";
 
 service PostService {
     rpc TestPost(TestPostRequest) returns (TestPostResponse) {}
+    rpc GetListPost(GetListPostRequest) returns (GetListPostResponse) {}
+    rpc CreatePost(CreatePostRequest) returns (CreatePostResponse){}
+}
+
+message GetListPostRequest {
+    string userId = 1;
+    int32 limit = 2;
+    int32 page = 3;
+}
+message CreatePostRequest {
+    string author_id=1;
+    string content =2;
+    repeated string hashtags = 3;
+    repeated string links = 4;
+    repeated string taggedUserIds = 5;
+    repeated string images = 6;
+    string postParentId=7;
+}
+message CreatePostResponse{
+    string author_id=1;
+    string content =2;
+    repeated string hashtags = 3;
+    repeated string links = 4;
+    repeated string taggedUserIds = 5;
+    repeated string images = 6;
+    string postParentId=7;
+}
+message Post {
+    string id = 1;
+    string author_id = 2;
+}
+
+message GetListPostResponse {
+    repeated Post listPost = 1;
+    int32 total = 2;
 }
 
 message TestPostRequest {

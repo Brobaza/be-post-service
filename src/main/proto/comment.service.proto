@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package commentProtoService;
+
+option java_multiple_files = true;
+option java_package = "post.service.be_post_service.grpc";
+option java_outer_classname = "CommentServiceProto";
+
+service CommentService {
+  rpc CreateComment(CreateCommentRequest) returns (CreateCommentResponse){}
+}
+message CreateCommentRequest {
+  string author_id=1;
+  string content =2;
+  repeated string hashtags = 3;
+  repeated string links = 4;
+  repeated string taggedUserIds = 5;
+  repeated string images = 6;
+  string commentParentId=7;
+  string postId=8;
+}
+message CreateCommentResponse{
+  string author_id=1;
+  string content =2;
+  repeated string hashtags = 3;
+  repeated string links = 4;
+  repeated string taggedUserIds = 5;
+  repeated string images = 6;
+  string commentParentId=7;
+  string postId=8;
+}
