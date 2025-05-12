@@ -41,7 +41,7 @@ public class Post extends BaseEntity<UUID> {
 
     @Column(name = "author_id", nullable = false)
     private UUID authorId;
-    @Column(name = "post_parent_id", nullable = false)
+    @Column(name = "post_parent_id")
     private UUID postParentId;
 
     @Column(name = "like_count")

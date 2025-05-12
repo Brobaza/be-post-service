@@ -20,7 +20,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class PostUserTag extends BaseEntity<UUID> {
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id")
     private UUID user_id;
     @Column(name = "post_id", nullable = false)
     private UUID post_id;
