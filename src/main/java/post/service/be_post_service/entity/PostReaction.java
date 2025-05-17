@@ -1,19 +1,16 @@
 package post.service.be_post_service.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import post.service.be_post_service.base.BaseEntity;
+import post.service.be_post_service.enums.ReactionType;
 
 import java.util.UUID;
 
 @Entity
 @Table(name = "post_reaction", indexes = {
         @Index(name = "idx_post_reaction_id", columnList = "post_id"),
-        @Index(name = "idx_post_reaction_user_id", columnList = "user_id"),
-        @Index(name = "idx_post_reaction_type_id", columnList = "reaction_type_id")
+        @Index(name = "idx_post_reaction_user_id", columnList = "user_id")
 })
 @Getter
 @Setter
@@ -25,6 +22,6 @@ public class PostReaction extends BaseEntity<UUID> {
     private UUID postId;
     @Column(name = "user_id",nullable = false)
     private UUID userId;
-    @Column(name = "reaction_type_id",nullable = false)
-    private UUID reactionTypeId;
+    @Enumerated(EnumType.STRING)
+    private ReactionType reactionType;
 }

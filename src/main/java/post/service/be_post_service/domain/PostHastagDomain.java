@@ -20,4 +20,7 @@ public class PostHastagDomain extends BaseDomain<PostHastag, UUID> {
     public UUID createPostHashtag(PostHastag postHashtag) {
         return postHastagRepository.save(postHashtag).getId();
     }
+    public PostHastag getByPostId(UUID postId) {
+        return postHastagRepository.getByPostId(postId);
+    }
 }

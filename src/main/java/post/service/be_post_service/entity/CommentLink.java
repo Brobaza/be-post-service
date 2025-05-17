@@ -1,6 +1,7 @@
 package post.service.be_post_service.entity;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.vladmihalcea.hibernate.type.array.StringArrayType;
 import com.vladmihalcea.hibernate.type.array.UUIDArrayType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,8 +26,8 @@ import java.util.UUID;
 public class CommentLink  extends BaseEntity<UUID> {
     @Column(name = "comment_id", nullable = false)
     private UUID commentId;
-    @JsonSubTypes.Type(UUIDArrayType.class)
-    @Column(name = "content", columnDefinition = "uuid[]")
+    @JsonSubTypes.Type(StringArrayType.class)
+    @Column(name = "content", columnDefinition = "text[]")
     @Builder.Default
-    private List<UUID> content = new ArrayList<>();
+    private List<String> content = new ArrayList<>();
 }
