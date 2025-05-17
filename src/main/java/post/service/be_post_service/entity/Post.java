@@ -4,10 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,10 +14,9 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
-import com.vladmihalcea.hibernate.type.array.UUIDArrayType;
 
 import post.service.be_post_service.base.BaseEntity;
+import post.service.be_post_service.enums.PostType;
 
 @Entity
 @Table(name = "posts", indexes = {
@@ -41,7 +37,7 @@ public class Post extends BaseEntity<UUID> {
 
     @Column(name = "author_id", nullable = false)
     private UUID authorId;
-    @Column(name = "post_parent_id", nullable = false)
+    @Column(name = "post_parent_id")
     private UUID postParentId;
 
     @Column(name = "like_count")
@@ -58,8 +54,17 @@ public class Post extends BaseEntity<UUID> {
     @Builder.Default
     private List<UUID> sharedUserIds = new ArrayList<>();
 
-    @Type(UUIDArrayType.class)
-    @Column(name = "images", columnDefinition = "uuid[]")
-    @Builder.Default
-    private List<UUID> images = new ArrayList<>();
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "images")
+    private List<String> images;
+
+    @Enumerated(EnumType.STRING)
+    private PostType postType;
+    @Transient
+    private PostLink postLinks;
+    @Transient
+    private PostHastag hashtags;
+    @Transient
+    private List<PostUserTag> userTags;
+
 }

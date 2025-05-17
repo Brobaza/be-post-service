@@ -7,7 +7,85 @@ option java_package = "post.service.be_post_service.grpc";
 option java_outer_classname = "PostServiceProto";
 
 service PostService {
+    //post
     rpc TestPost(TestPostRequest) returns (TestPostResponse) {}
+    rpc GetListPost(GetListPostRequest) returns (GetListPostResponse) {}
+    rpc CreatePost(CreatePostRequest) returns (CreatePostResponse){}
+    rpc UpdatePost(UpdatePostRequest) returns (CreatePostResponse){}
+    rpc GetListPostByUserID(GetPostByUserIdRequest) returns (ListPostResponse);
+    rpc GetListPostOnOtherUser(GetListPostOnOtherUserReq) returns (ListPostResponse);
+    rpc GetListPostOnDashBoard(GetPostOnDashBoardReq) returns (ListPostResponse);
+    rpc CreateReactionPost(CreatePostReactionRequest) returns (MetaData);
+    //comment
+    rpc UpdateComment(UpdateCommentRequest) returns(CreateCommentResponse){}
+    rpc CreateComment(CreateCommentRequest) returns (CreateCommentResponse){}
+    rpc GetListComment(GetListCommentRequest) returns (ListCommentResponse);
+    rpc CreateReactionComment(CreateCommentReactionRequest) returns(MetaData);
+}
+
+message GetListPostRequest {
+    string userId = 1;
+    int32 limit = 2;
+    int32 page = 3;
+}
+message CreatePostRequest {
+    string author_id=1;
+    string content =2;
+    repeated string hashtags = 3;
+    repeated string links = 4;
+    repeated string taggedUserIds = 5;
+    repeated string images = 6;
+    string postParentId=7;
+    string postType=8;
+}
+message GetPostByUserIdRequest {
+    string userId=1;
+}
+message GetPostOnDashBoardReq{
+    string userId = 1;
+    int32 limit = 2;
+    int32 page = 3;
+}
+message ListPostResponse {
+    repeated CreatePostResponse postResponse=1;
+    MetaData metadata = 2;
+}
+message CreatePostReactionRequest{
+    string postId=1;
+    string userId=2;
+    string reactionType=3;
+}
+message UpdatePostRequest {
+    string author_id=1;
+    string content =2;
+    repeated string hashtags = 3;
+    repeated string links = 4;
+    repeated string taggedUserIds = 5;
+    repeated string images = 6;
+    string postParentId=7;
+    string postId=8;
+    string postType=9;
+}
+message CreatePostResponse{
+    string author_id=1;
+    string content =2;
+    repeated string hashtags = 3;
+    repeated string links = 4;
+    repeated string taggedUserIds = 5;
+    repeated string images = 6;
+    string postParentId=7;
+    string postId=8;
+    string postType=9;
+    MetaData metaData=10;
+}
+message Post {
+    string id = 1;
+    string author_id = 2;
+}
+
+message GetListPostResponse {
+    repeated Post listPost = 1;
+    int32 total = 2;
 }
 
 message TestPostRequest {
@@ -20,4 +98,57 @@ message TestPostResponse {
     string name = 1;
     string email = 2;
     string message = 3;
+}
+message GetListPostOnOtherUserReq{
+    string userId=1;
+    string friendId=2;
+}
+message MetaData{
+    string respcode=1;
+    string message=2;
+}
+message CreateCommentRequest {
+    string author_id=1;
+    string content =2;
+    repeated string hashtags = 3;
+    repeated string links = 4;
+    repeated string taggedUserIds = 5;
+    repeated string images = 6;
+    string commentParentId=7;
+    string postId=8;
+}
+message UpdateCommentRequest {
+    string author_id=1;
+    string content =2;
+    repeated string hashtags = 3;
+    repeated string links = 4;
+    repeated string taggedUserIds = 5;
+    repeated string images = 6;
+    string commentParentId=7;
+    string postId=8;
+    string commentId=9;
+}
+message CreateCommentResponse{
+    string author_id=1;
+    string content =2;
+    repeated string hashtags = 3;
+    repeated string links = 4;
+    repeated string taggedUserIds = 5;
+    repeated string images = 6;
+    string commentParentId=7;
+    string postId=8;
+    string commentId=9;
+    MetaData metaData=10;
+}
+message GetListCommentRequest{
+    string postId=1;
+}
+message ListCommentResponse {
+    repeated CreateCommentResponse comments = 1;
+    MetaData metadata = 2;
+}
+message CreateCommentReactionRequest{
+    string commentId=1;
+    string userId=2;
+    string reactionType=3;
 }

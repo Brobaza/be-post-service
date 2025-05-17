@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import post.service.be_post_service.base.BaseDomain;
 import post.service.be_post_service.custom.Domain;
 import post.service.be_post_service.entity.CommentHastag;
+import post.service.be_post_service.entity.PostLink;
 import post.service.be_post_service.repositories.CommentHastagRepository;
 
 @Domain
@@ -18,5 +19,8 @@ public class CommentHastagDomain extends BaseDomain<CommentHastag, UUID> {
 
     public UUID createCommentHashtag(CommentHastag commentHashtag) {
         return commentHastagRepository.save(commentHashtag).getId();
+    }
+    public CommentHastag getByCommentId(UUID commentId) {
+        return commentHastagRepository.getByCommentId(commentId);
     }
 }

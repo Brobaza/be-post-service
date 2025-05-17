@@ -6,8 +6,11 @@ import org.springframework.stereotype.Service;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import userProtoService.UserServiceGrpc;
+import userProtoService.UserServiceOuterClass;
 import userProtoService.UserServiceOuterClass.GetUserRequest;
 import userProtoService.UserServiceOuterClass.GetUserResponse;
+
+import java.util.List;
 
 @Service
 public class GrpcUserService {
@@ -28,6 +31,21 @@ public class GrpcUserService {
                 .setId(userId)
                 .build();
         return userStub.getUser(request);
+    }
+    public List<GetUserResponse> getListFriendRequest(String userId,int limit,int page){
+        UserServiceOuterClass.getListFriendRequestReq request= UserServiceOuterClass.getListFriendRequestReq.newBuilder()
+                .setUserId(userId)
+                .setLimit(limit)
+                .setPage(page)
+                .build();
+        return userStub.getListFriendRequest(request).getFriendRequestsList();
+    }
+    public boolean isOnFriendList(String userId, String friendId){
+        UserServiceOuterClass.isOnFriendListReq request = UserServiceOuterClass.isOnFriendListReq.newBuilder()
+                .setUserId(userId)
+                .setFriendId(friendId)
+                .build();
+        return userStub.isOnFriendList(request).getConfirm();
     }
 }
 
