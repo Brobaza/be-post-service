@@ -54,6 +54,13 @@ public class PostService {
                 throw new IllegalArgumentException("Parent post not found: " + parentId);
             }
             post.setPostParentId(parentId);
+            parentPost.setShareCount(parentPost.getShareCount()+1);
+            List<UUID> sharedUserIds=parentPost.getSharedUserIds();
+            if(!sharedUserIds.contains(post.getAuthorId())){
+                sharedUserIds.add(post.getAuthorId());
+            }
+            parentPost.setSharedUserIds(sharedUserIds);
+            postDomain.saveOrUpdate(parentPost);
         }
 
         List<String> images = request.getImagesList() != null ? request.getImagesList() : Collections.emptyList();
