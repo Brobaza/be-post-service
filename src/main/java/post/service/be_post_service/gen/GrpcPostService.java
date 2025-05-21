@@ -19,7 +19,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import net.devh.boot.grpc.server.service.GrpcService;
-import post.service.be_post_service.dtos.TestDto;
+import org.springframework.beans.factory.annotation.Value;
+import post.service.be_post_service.dtos.*;
 import post.service.be_post_service.entity.Comment;
 import post.service.be_post_service.entity.Post;
 import post.service.be_post_service.grpc.*;
@@ -33,6 +34,14 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
 
     private final Logger logger = Logger.getLogger(GrpcPostService.class.getName());
     private final GrpcUserService grpcUserService;
+    @Value("${spring.kafka.create-comment}")
+    private String createCommentTopic;
+    @Value("${spring.kafka.update-comment}")
+    private String updateCommentTopic;
+    @Value("${spring.kafka.reaction-post}")
+    private String reactionPostTopic;
+    @Value("${spring.kafka.reaction-comment}")
+    private String reactionCommentTopic;
     @Autowired
     private CommentService commentService;
 
@@ -251,6 +260,19 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
             io.grpc.stub.StreamObserver<MetaData> responseObserver) {
         try {
             postService.CreatePostReaction(request);
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(SerializationFeature.FAIL_ON_SELF_REFERENCES, false);
+            mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+            try {
+                CreatePostReactionRequestDto testDto = new CreatePostReactionRequestDto(request);
+                String parsedValue = mapper.writeValueAsString(testDto);
+                System.out.println("Parsed value: " + parsedValue);
+
+                this.producerService.sendMessage(parsedValue, reactionPostTopic);
+
+            } catch (JsonProcessingException e) {
+                logger.severe("Error processing JSON: " + e.getMessage());
+            }
             MetaData metaData = MetaData.newBuilder()
                     .setRespcode("200")
                     .setMessage("Reaction created successfully")
@@ -273,6 +295,19 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
             io.grpc.stub.StreamObserver<CreateCommentResponse> responseObserver) {
         try {
             Comment comment = commentService.createComment(request);
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(SerializationFeature.FAIL_ON_SELF_REFERENCES, false);
+            mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+            try {
+                CreateCommentRequestDto testDto = new CreateCommentRequestDto(request);
+                String parsedValue = mapper.writeValueAsString(testDto);
+                System.out.println("Parsed value: " + parsedValue);
+
+                this.producerService.sendMessage(parsedValue, createCommentTopic);
+
+            } catch (JsonProcessingException e) {
+                logger.severe("Error processing JSON: " + e.getMessage());
+            }
             MetaData metaData = MetaData.newBuilder()
                     .setRespcode("200")
                     .setMessage("Comment created successfully")
@@ -308,6 +343,19 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
             io.grpc.stub.StreamObserver<CreateCommentResponse> responseObserver) {
         try {
             Comment comment = commentService.updateComment(request);
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(SerializationFeature.FAIL_ON_SELF_REFERENCES, false);
+            mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+            try {
+                UpdateCommentRequestDto testDto = new UpdateCommentRequestDto(request);
+                String parsedValue = mapper.writeValueAsString(testDto);
+                System.out.println("Parsed value: " + parsedValue);
+
+                this.producerService.sendMessage(parsedValue, updateCommentTopic);
+
+            } catch (JsonProcessingException e) {
+                logger.severe("Error processing JSON: " + e.getMessage());
+            }
             String commentIdStr = comment.getId() != null ? comment.getId().toString() : "";
             MetaData metaData = MetaData.newBuilder()
                     .setRespcode("200")
@@ -395,6 +443,19 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
             io.grpc.stub.StreamObserver<MetaData> responseObserver) {
         try {
             commentService.createCommentReaction(request);
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(SerializationFeature.FAIL_ON_SELF_REFERENCES, false);
+            mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+            try {
+                CreateCommentReactionRequestDto testDto = new CreateCommentReactionRequestDto(request);
+                String parsedValue = mapper.writeValueAsString(testDto);
+                System.out.println("Parsed value: " + parsedValue);
+
+                this.producerService.sendMessage(parsedValue, reactionCommentTopic);
+
+            } catch (JsonProcessingException e) {
+                logger.severe("Error processing JSON: " + e.getMessage());
+            }
             MetaData metaData = MetaData.newBuilder()
                     .setRespcode("200")
                     .setMessage("Reaction created successfully")
