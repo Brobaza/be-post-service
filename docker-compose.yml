@@ -13,6 +13,4 @@ services:
       - "3008:3008" # gRPC
     networks:
       - global_network
-    volumes:
-      - ./src:/app/src
     restart: unless-stopped
