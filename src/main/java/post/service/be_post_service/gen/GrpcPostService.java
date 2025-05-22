@@ -8,12 +8,22 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.grpc.stub.StreamObserver;
+import io.lettuce.core.json.JsonObject;
+
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
 import net.devh.boot.grpc.server.service.GrpcService;
+import post.service.be_post_service.dtos.TestDto;
 import post.service.be_post_service.entity.Comment;
 import post.service.be_post_service.entity.Post;
 import post.service.be_post_service.grpc.*;
+import post.service.be_post_service.queue.ProducerService;
 import post.service.be_post_service.services.CommentService;
 import post.service.be_post_service.services.PostService;
 import userProtoService.UserServiceOuterClass.GetUserResponse;
@@ -25,10 +35,16 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
     private final GrpcUserService grpcUserService;
     @Autowired
     private CommentService commentService;
+
     @Autowired
-    public GrpcPostService(GrpcUserService grpcUserService) {
+    private ProducerService producerService;
+
+    @Autowired
+    public GrpcPostService(GrpcUserService grpcUserService, ProducerService producerService) {
+        this.producerService = producerService;
         this.grpcUserService = grpcUserService;
     }
+
     @Autowired
     private PostService postService;
 
@@ -40,6 +56,21 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
                 .setMessage(request.getMessage())
                 .build();
 
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(SerializationFeature.FAIL_ON_SELF_REFERENCES, false);
+        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+
+        try {
+            TestDto testDto = new TestDto(request);
+            String parsedValue = mapper.writeValueAsString(testDto);
+            System.out.println("Parsed value: " + parsedValue);
+
+            this.producerService.sendMessage(parsedValue, "test-post");
+
+        } catch (JsonProcessingException e) {
+            logger.severe("Error processing JSON: " + e.getMessage());
+        }
+
         GetUserResponse userResponse = grpcUserService
                 .getUser(new StringBuilder().append(new String("74cf4138-d8ef-41c1-9b97-924d920abe49")).toString());
 
@@ -48,9 +79,11 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
         responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
-    //post
+
+    // post
     @Override
-    public void createPost(CreatePostRequest request, io.grpc.stub.StreamObserver<CreatePostResponse> responseObserver) {
+    public void createPost(CreatePostRequest request,
+            io.grpc.stub.StreamObserver<CreatePostResponse> responseObserver) {
         try {
             Post post = postService.createPost(request);
             String authorIdStr = post.getAuthorId() != null ? post.getAuthorId().toString() : "";
@@ -84,8 +117,10 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
             responseObserver.onCompleted();
         }
     }
+
     @Override
-    public void updatePost(UpdatePostRequest request, io.grpc.stub.StreamObserver<CreatePostResponse> responseObserver) {
+    public void updatePost(UpdatePostRequest request,
+            io.grpc.stub.StreamObserver<CreatePostResponse> responseObserver) {
         try {
             Post post = postService.updatePost(request);
             String authorIdStr = post.getAuthorId() != null ? post.getAuthorId().toString() : "";
@@ -121,6 +156,7 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
             responseObserver.onCompleted();
         }
     }
+
     @Override
     public void getListPostByUserID(GetPostByUserIdRequest request, StreamObserver<ListPostResponse> responseObserver) {
         try {
@@ -133,8 +169,10 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
             responseObserver.onCompleted();
         }
     }
+
     @Override
-    public void getListPostOnOtherUser(GetListPostOnOtherUserReq request, StreamObserver<ListPostResponse> responseObserver) {
+    public void getListPostOnOtherUser(GetListPostOnOtherUserReq request,
+            StreamObserver<ListPostResponse> responseObserver) {
         try {
             List<Post> listPost = postService.getPostOnWallOfOtherUser(
                     UUID.fromString(request.getUserId()),
@@ -147,8 +185,10 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
             responseObserver.onCompleted();
         }
     }
+
     @Override
-    public void getListPostOnDashBoard(GetPostOnDashBoardReq request, StreamObserver<ListPostResponse> responseObserver){
+    public void getListPostOnDashBoard(GetPostOnDashBoardReq request,
+            StreamObserver<ListPostResponse> responseObserver) {
         try {
             List<Post> listPost = postService.getPostOnDashBoard(
                     UUID.fromString(request.getUserId()),
@@ -161,6 +201,7 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
             responseObserver.onCompleted();
         }
     }
+
     private List<CreatePostResponse> mapPostsToResponses(List<Post> listPost) {
         List<CreatePostResponse> postResponse = new ArrayList<>();
         for (Post post : listPost) {
@@ -171,8 +212,10 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
                             .map(tag -> tag.getId().toString())
                             .collect(Collectors.toList())
                             : Collections.emptyList())
-                    .addAllHashtags(post.getHashtags() != null ? post.getHashtags().getContent() : Collections.emptyList())
-                    .addAllLinks(post.getPostLinks() != null ? post.getPostLinks().getContent() : Collections.emptyList())
+                    .addAllHashtags(
+                            post.getHashtags() != null ? post.getHashtags().getContent() : Collections.emptyList())
+                    .addAllLinks(
+                            post.getPostLinks() != null ? post.getPostLinks().getContent() : Collections.emptyList())
                     .addAllImages(post.getImages() != null ? post.getImages() : Collections.emptyList())
                     .setPostParentId(post.getPostParentId() != null ? post.getPostParentId().toString() : "")
                     .setPostId(post.getId() != null ? post.getId().toString() : "")
@@ -183,6 +226,7 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
         }
         return postResponse;
     }
+
     private ListPostResponse buildSuccessResponse(List<CreatePostResponse> postResponse) {
         return ListPostResponse.newBuilder()
                 .addAllPostResponse(postResponse)
@@ -192,6 +236,7 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
                         .build())
                 .build();
     }
+
     private ListPostResponse buildErrorResponse(Exception e) {
         return ListPostResponse.newBuilder()
                 .setMetadata(MetaData.newBuilder()
@@ -200,8 +245,10 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
                         .build())
                 .build();
     }
+
     @Override
-    public void createReactionPost(CreatePostReactionRequest request, io.grpc.stub.StreamObserver<MetaData> responseObserver) {
+    public void createReactionPost(CreatePostReactionRequest request,
+            io.grpc.stub.StreamObserver<MetaData> responseObserver) {
         try {
             postService.CreatePostReaction(request);
             MetaData metaData = MetaData.newBuilder()
@@ -219,12 +266,14 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
             responseObserver.onCompleted();
         }
     }
-    //comment
+
+    // comment
     @Override
-    public void createComment(CreateCommentRequest request, io.grpc.stub.StreamObserver<CreateCommentResponse> responseObserver) {
+    public void createComment(CreateCommentRequest request,
+            io.grpc.stub.StreamObserver<CreateCommentResponse> responseObserver) {
         try {
             Comment comment = commentService.createComment(request);
-            MetaData metaData=MetaData.newBuilder()
+            MetaData metaData = MetaData.newBuilder()
                     .setRespcode("200")
                     .setMessage("Comment created successfully")
                     .build();
@@ -253,12 +302,14 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
             responseObserver.onCompleted();
         }
     }
+
     @Override
-    public void updateComment(UpdateCommentRequest request, io.grpc.stub.StreamObserver<CreateCommentResponse> responseObserver) {
+    public void updateComment(UpdateCommentRequest request,
+            io.grpc.stub.StreamObserver<CreateCommentResponse> responseObserver) {
         try {
             Comment comment = commentService.updateComment(request);
             String commentIdStr = comment.getId() != null ? comment.getId().toString() : "";
-            MetaData metaData=MetaData.newBuilder()
+            MetaData metaData = MetaData.newBuilder()
                     .setRespcode("200")
                     .setMessage("Comment created successfully")
                     .build();
@@ -288,6 +339,7 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
             responseObserver.onCompleted();
         }
     }
+
     @Override
     public void getListComment(GetListCommentRequest request, StreamObserver<ListCommentResponse> responseObserver) {
         try {
@@ -302,12 +354,14 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
                         .addAllTaggedUserIds(comment.getUserTags() != null ? comment.getUserTags().stream()
                                 .map(tag -> tag.getId().toString())
                                 .collect(Collectors.toList())
-                                : Collections.emptyList()
-                        )
-                        .addAllHashtags(comment.getHashtags() != null ? comment.getHashtags().getContent() : Collections.emptyList())
-                        .addAllLinks(comment.getCommentLinks() != null ? comment.getCommentLinks().getContent() : Collections.emptyList())
+                                : Collections.emptyList())
+                        .addAllHashtags(comment.getHashtags() != null ? comment.getHashtags().getContent()
+                                : Collections.emptyList())
+                        .addAllLinks(comment.getCommentLinks() != null ? comment.getCommentLinks().getContent()
+                                : Collections.emptyList())
                         .addAllImages(comment.getImages() != null ? comment.getImages() : Collections.emptyList())
-                        .setCommentParentId(comment.getCommentParentId() != null ? comment.getCommentParentId().toString() : "")
+                        .setCommentParentId(
+                                comment.getCommentParentId() != null ? comment.getCommentParentId().toString() : "")
                         .setPostId(comment.getPostId() != null ? comment.getPostId().toString() : "")
                         .build();
 
@@ -335,8 +389,10 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
             responseObserver.onCompleted();
         }
     }
+
     @Override
-    public void createReactionComment(CreateCommentReactionRequest request,io.grpc.stub.StreamObserver<MetaData> responseObserver){
+    public void createReactionComment(CreateCommentReactionRequest request,
+            io.grpc.stub.StreamObserver<MetaData> responseObserver) {
         try {
             commentService.createCommentReaction(request);
             MetaData metaData = MetaData.newBuilder()
