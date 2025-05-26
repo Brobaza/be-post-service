@@ -155,36 +155,26 @@ message CreateCommentReactionRequest{
     string userId=2;
     string reactionType=3;
 }
-message Story {
-  string id = 1;
-  string userId = 2;
-  string content = 3;
-  string mediaUrl = 4;
-  string mediaType = 5; 
-  string createdAt = 6;
-  string expiredAt = 7;
-  userProtoService.GetUserResponse user = 8; 
-}
-message CreateStoryRequest {
-  string userId = 1;
-  string content = 2;
-  string mediaUrl = 3;
-  string mediaType = 4;
+// Story messages
+message CreateStoryRequest{
+    string author_Id=1;   
+    repeated string images=2;    
+    string storyType=3;
+    string expiredAt=4;
 }
 
-message CreateStoryResponse {
-  string storyId = 1;
-  Metadata metadata = 2;
+message CreateStoryResponse{
+    string author_Id = 1;
+    repeated string images = 2;
+    string storyType = 3;
+    string expiredAt = 4;
+    MetaData metaData = 5;
 }
-message GetListStoryRequest {
-  string userId = 1;
-  int32 limit = 2;
-  int32 page = 3;
-}
-
-message GetListStoryResponse {
-  repeated Story stories = 1;
-  int32 total = 2;
-  Metadata metadata = 3;
+message GetListStoryRequest{
+    
 }
 
+message GetListStoryResponse{
+    repeated CreateStoryResponse storyResponse = 1;
+    MetaData metaData = 2;
+}

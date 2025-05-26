@@ -1,6 +1,7 @@
 package post.service.be_post_service.domain;
 
 import java.util.UUID;
+import java.sql.Date;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +33,11 @@ public class StoryDomain extends BaseDomain<Story, UUID> {
         return storyRepository.getStoriesByUserId(userId);
     }
 
-    public List<Story> getActiveStoriesByUserIds(List<UUID> userIds, LocalDateTime now) {
+    public List<Story> getActiveStoriesByUserIds(List<UUID> userIds, Date now) {
         return storyRepository.getActiveStoriesByUserIds(userIds, now);
+    }
+
+    public List<Story> getAllActiveStories(Date now) {
+        return storyRepository.getAllActiveStories(now);
     }
 }

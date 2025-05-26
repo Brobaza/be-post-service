@@ -1,5 +1,6 @@
 package post.service.be_post_service.repositories;
 
+import java.sql.Date;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -25,9 +26,12 @@ public interface StoryRepository extends BaseRepository<Story, UUID> {
     @Query("SELECT s FROM Story s WHERE s.authorId IN :user_ids AND s.expiredAt > :now ORDER BY s.createdDate DESC")
     List<Story> getActiveStoriesByUserIds(
             @Param("user_ids") List<UUID> userIds,
-            @Param("now") LocalDateTime now
+            @Param("now") Date now
     );
 
     @Query("SELECT s FROM Story s WHERE s.expiredAt <= :now")
-    List<Story> getExpiredStories(@Param("now") LocalDateTime now);
+    List<Story> getExpiredStories(@Param("now") Date now);
+    
+    @Query("SELECT s FROM Story s WHERE s.expiredAt > :now ORDER BY s.createdDate DESC")
+    List<Story> getAllActiveStories(@Param("now") Date now);
 }

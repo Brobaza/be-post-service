@@ -1,5 +1,6 @@
 package post.service.be_post_service.entity;
 
+import java.sql.Date;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,13 +40,14 @@ public class Story extends BaseEntity<UUID> {
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "images")
     private List<String> images = new ArrayList<>();
-
+       
     @Column(name = "expired_at", nullable = false)
-    private LocalDateTime expiredAt;
+    private Date expiredAt;
 
     @Column(name = "view_count")
     private int viewCount;
-
+    @Column(name = "story_type")
+    private String storyType;
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "viewed_user_ids", columnDefinition = "uuid[]")
     private List<UUID> viewedUserIds = new ArrayList<>();
