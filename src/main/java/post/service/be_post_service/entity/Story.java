@@ -18,11 +18,13 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import post.service.be_post_service.base.BaseEntity;
+import post.service.be_post_service.enums.StoryType;
+import post.service.be_post_service.enums.ViewType;
 
 @Entity
 @Table(name = "stories", indexes = {
-        @Index(name = "index_story_author_id", columnList = "author_id"),
-        @Index(name = "idx_story_expired_at", columnList = "expired_at")
+        @Index(name = "index_story_author_id", columnList = "author_id")
+        
 })
 @Getter
 @Setter
@@ -31,7 +33,7 @@ import post.service.be_post_service.base.BaseEntity;
 @Builder
 public class Story extends BaseEntity<UUID> {
 
-    @Column(columnDefinition = "TEXT") 
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     @Column(name = "author_id", nullable = false)
@@ -40,19 +42,22 @@ public class Story extends BaseEntity<UUID> {
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "images")
     private List<String> images = new ArrayList<>();
-       
-    @Column(name = "expired_at", nullable = false)
-    private Date expiredAt;
+
+    // @Column(name = "is_expired", nullable = false)
+    // private boolean isExpired;
 
     @Column(name = "view_count")
     private int viewCount;
+    @Enumerated(EnumType.STRING)
     @Column(name = "story_type")
-    private String storyType;
+    private StoryType storyType;
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "viewed_user_ids", columnDefinition = "uuid[]")
     private List<UUID> viewedUserIds = new ArrayList<>();
 
     @Column(name = "video_url")
     private String videoUrl;
-
+    @Enumerated(EnumType.STRING)
+    @Column(name = "view_type")
+    private ViewType viewType;
 }

@@ -33,11 +33,11 @@ public class StoryDomain extends BaseDomain<Story, UUID> {
         return storyRepository.getStoriesByUserId(userId);
     }
 
-    public List<Story> getActiveStoriesByUserIds(List<UUID> userIds, Date now) {
-        return storyRepository.getActiveStoriesByUserIds(userIds, now);
-    }
+    // public List<Story> getActiveStoriesByUserIds(List<UUID> userIds, Date now) {
+    //     return storyRepository.getActiveStoriesByUserIds(userIds, now);
+    // }
 
-    public List<Story> getAllActiveStories(Date now) {
-        return storyRepository.getAllActiveStories(now);
+    public List<Story> getAllActiveStories(Date threshold) {
+        return storyRepository.getAllActiveStories(threshold);
     }
 }

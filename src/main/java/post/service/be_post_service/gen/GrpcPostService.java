@@ -442,17 +442,14 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
 
                 try {
                         Story story = storyService.createStory(request);
-                        String authorIdStr = story.getAuthorId() != null ? story.getAuthorId().toString() : "";
+                        String storyIdStr = story.getId() != null ? story.getId().toString() : "";
                         MetaData metaData = MetaData.newBuilder()
                                         .setRespcode("200")
                                         .setMessage("Story created successfully")
                                         .build();
 
                         CreateStoryResponse response = CreateStoryResponse.newBuilder()
-                                        .setAuthorId(authorIdStr)
-                                        .addAllImages(story.getImages())
-                                        .setStoryType(story.getStoryType() != null ? story.getStoryType() : "")
-                                        .setExpiredAt(story.getExpiredAt().toString())
+                                        .setStoryId(storyIdStr)
                                         .setMetaData(metaData)
                                         .build();
 
@@ -474,16 +471,7 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
         public void getListStory(GetListStoryRequest request, StreamObserver<GetListStoryResponse> responseObserver) {
                 try {
                         // Lấy danh sách story response từ service
-                        List<CreateStoryResponse> storyResponses = storyService.getListStory(request);
-                        MetaData metaData = MetaData.newBuilder()
-                                        .setRespcode("200")
-                                        .setMessage("Story created successfully")
-                                        .build();
-                        // Xây dựng response trả về
-                        GetListStoryResponse response = GetListStoryResponse.newBuilder()
-                                        .addAllStoryResponse(storyResponses)
-                                        .setMetaData(metaData)
-                                        .build();
+                        GetListStoryResponse response = storyService.getListStory(request);
 
                         responseObserver.onNext(response);
                         responseObserver.onCompleted();
@@ -498,4 +486,4 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
                         responseObserver.onCompleted();
                 }
         }
-}
+ }

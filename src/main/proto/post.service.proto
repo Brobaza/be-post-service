@@ -156,25 +156,31 @@ message CreateCommentReactionRequest{
     string reactionType=3;
 }
 // Story messages
+
+message Story {
+    string storyId = 1;
+    string author_Id = 2;
+    repeated string images = 3;
+    string storyType = 4;
+    string createdAt = 5;
+    string viewType = 6;
+}
 message CreateStoryRequest{
     string author_Id=1;   
     repeated string images=2;    
     string storyType=3;
-    string expiredAt=4;
+    string viewType=4; 
 }
 
 message CreateStoryResponse{
-    string author_Id = 1;
-    repeated string images = 2;
-    string storyType = 3;
-    string expiredAt = 4;
-    MetaData metaData = 5;
+    string storyId = 1;
+    MetaData metaData = 2;
 }
 message GetListStoryRequest{
-    
+    string userId = 1;
 }
 
 message GetListStoryResponse{
-    repeated CreateStoryResponse storyResponse = 1;
+    repeated Story story = 1;
     MetaData metaData = 2;
 }

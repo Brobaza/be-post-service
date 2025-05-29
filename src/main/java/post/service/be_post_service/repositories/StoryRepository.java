@@ -23,15 +23,16 @@ public interface StoryRepository extends BaseRepository<Story, UUID> {
     @Query("SELECT s FROM Story s WHERE s.authorId = :user_id ORDER BY s.createdDate DESC")
     List<Story> getStoriesByUserId(@Param("user_id") UUID userId);
 
-    @Query("SELECT s FROM Story s WHERE s.authorId IN :user_ids AND s.expiredAt > :now ORDER BY s.createdDate DESC")
-    List<Story> getActiveStoriesByUserIds(
-            @Param("user_ids") List<UUID> userIds,
-            @Param("now") Date now
-    );
+    // @Query("SELECT s FROM Story s WHERE s.authorId IN :user_ids AND s.expiredAt > :now ORDER BY s.createdDate DESC")
+    // List<Story> getActiveStoriesByUserIds(
+    //         @Param("user_ids") List<UUID> userIds,
+    //         @Param("now") Date now
+    // );
 
-    @Query("SELECT s FROM Story s WHERE s.expiredAt <= :now")
-    List<Story> getExpiredStories(@Param("now") Date now);
+    // @Query("SELECT s FROM Story s WHERE s.expiredAt <= :now")
+    // List<Story> getExpiredStories(@Param("now") Date now);
     
-    @Query("SELECT s FROM Story s WHERE s.expiredAt > :now ORDER BY s.createdDate DESC")
-    List<Story> getAllActiveStories(@Param("now") Date now);
+    @Query("SELECT s FROM Story s WHERE s.createdDate >= :threshold ORDER BY s.createdDate DESC")
+    List<Story> getAllActiveStories(@Param("threshold") Date threshold);
+
 }
