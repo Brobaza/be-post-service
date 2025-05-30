@@ -17,9 +17,8 @@ public class GrpcUserService {
     private final UserServiceGrpc.UserServiceBlockingStub userStub;
 
     public GrpcUserService(
-        @Value("${microservices.user-service.url}") String userServiceHost,
-        @Value("${microservices.user-service.port}") int userServicePort
-    ) {
+            @Value("${microservices.user-service.url}") String userServiceHost,
+            @Value("${microservices.user-service.port}") int userServicePort) {
         ManagedChannel channel = ManagedChannelBuilder.forAddress(userServiceHost, userServicePort)
                 .usePlaintext()
                 .build();
@@ -32,20 +31,33 @@ public class GrpcUserService {
                 .build();
         return userStub.getUser(request);
     }
-    public List<GetUserResponse> getListFriendRequest(String userId,int limit,int page){
-        UserServiceOuterClass.getListFriendRequestReq request= UserServiceOuterClass.getListFriendRequestReq.newBuilder()
+
+    public List<GetUserResponse> getListFriendRequest(String userId, int limit, int page) {
+        UserServiceOuterClass.getListFriendRequestReq request = UserServiceOuterClass.getListFriendRequestReq
+                .newBuilder()
                 .setUserId(userId)
                 .setLimit(limit)
                 .setPage(page)
                 .build();
         return userStub.getListFriendRequest(request).getFriendRequestsList();
     }
-    public boolean isOnFriendList(String userId, String friendId){
+
+    public boolean isOnFriendList(String userId, String friendId) {
         UserServiceOuterClass.isOnFriendListReq request = UserServiceOuterClass.isOnFriendListReq.newBuilder()
                 .setUserId(userId)
                 .setFriendId(friendId)
                 .build();
         return userStub.isOnFriendList(request).getConfirm();
     }
-}
 
+    public UserServiceOuterClass.isOnFriendListRes isOnFriendListWithMetadata(String userId, String friendId) {
+        UserServiceOuterClass.isOnFriendListReq request = UserServiceOuterClass.isOnFriendListReq.newBuilder()
+                .setUserId(userId)
+                .setFriendId(friendId)
+                .build();
+        // Gọi gRPC để lấy kết quả, bao gồm cả metadata
+        UserServiceOuterClass.isOnFriendListRes response = userStub.isOnFriendList(request);
+        // response đã bao gồm metadata (nếu proto định nghĩa)
+        return response;
+    }
+}

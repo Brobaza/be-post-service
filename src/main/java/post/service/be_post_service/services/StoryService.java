@@ -55,7 +55,15 @@ public class StoryService {
             }
         }
     }
-
+    public boolean checkUserExistsById(String userId) {
+    try {
+        var user = grpcUserService.getUser(userId);
+        // Kiểm tra null và kiểm tra id thực sự tồn tại
+        return user != null && user.getId() != null && user.getId().equals(userId);
+    } catch (Exception e) {
+        return false;
+    }
+}
     public Story createStory(CreateStoryRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("Request cannot be null");
@@ -63,9 +71,24 @@ public class StoryService {
         Story story = new Story();
 
         story.setAuthorId(UUID.fromString(request.getAuthorId()));
+        // Kiểm tra authorId có phải là userId hợp lệ không bằng RPC GetUser
+        String authorId = request.getAuthorId();
+        if (authorId == null || authorId.isEmpty()) {
+            throw new IllegalArgumentException("AuthorId cannot be null or empty");
+        }
+        try {
+            UUID.fromString(authorId);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid authorId format, must be UUID", e);
+        }        
+        boolean userExists = checkUserExistsById(authorId);
+        if (!userExists) {
+            throw new IllegalArgumentException("AuthorId does not exist in user database");
+        }
 
         List<String> images = request.getImagesList() != null ? request.getImagesList() : Collections.emptyList();
         validateImagesAreUrls(images);
+        
         story.setImages(images);
         story.setStoryType(StoryType.valueOf(request.getStoryType()));
         story.setViewType(ViewType.valueOf(request.getViewType()));
@@ -75,7 +98,7 @@ public class StoryService {
     }
 
     public GetListStoryResponse getListStory(GetListStoryRequest request) {
-       if (request == null) {
+        if (request == null) {
             throw new IllegalArgumentException("Request cannot be null");
         }
         long nowMillis = System.currentTimeMillis();
@@ -92,6 +115,11 @@ public class StoryService {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid userId format, must be UUID", e);
         }
+        boolean userExists = checkUserExistsById(userId);
+        if (!userExists) {
+            throw new IllegalArgumentException("UserId does not exist in user database");
+        }
+        
         ViewType FRIENDS_ONLY = ViewType.FRIEND_ONLY;
         ViewType PUBLIC = ViewType.PUBLIC;
 
@@ -104,7 +132,7 @@ public class StoryService {
             }
             if (viewType == FRIENDS_ONLY) {
                 return userId != null && !userId.isEmpty() &&
-                        grpcUserService.isOnFriendList(authorId, userId);
+                        grpcUserService.isOnFriendListWithMetadata(authorId, userId).getConfirm();
             }
 
             return false;
