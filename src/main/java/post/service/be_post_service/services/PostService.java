@@ -1,5 +1,6 @@
 package post.service.be_post_service.services;
 
+import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -17,32 +18,32 @@ import post.service.be_post_service.grpc.GetPostByUserIdRequest;
 import post.service.be_post_service.grpc.UpdatePostRequest;
 import userProtoService.UserServiceOuterClass;
 
-
 @Service
 public class PostService {
 
     private final PostDomain postDomain;
-    private final PostHastagDomain postHastagDomain ;
-    private final PostLinkDomain postLinkDomain ;
-    private final PostUserTagDomain postUserTagDomain ;
-    private final PostReactionDomain postReactionDomain ;
+    private final PostHastagDomain postHastagDomain;
+    private final PostLinkDomain postLinkDomain;
+    private final PostUserTagDomain postUserTagDomain;
+    private final PostReactionDomain postReactionDomain;
     @Autowired
     private GrpcUserService grpcUserService;
 
     @Autowired
     public PostService(PostDomain postDomain, PostHastagDomain postHastagDomain,
-                       PostLinkDomain postLinkDomain, PostUserTagDomain postUserTagDomain, PostReactionDomain postReactionDomain) {
+            PostLinkDomain postLinkDomain, PostUserTagDomain postUserTagDomain, PostReactionDomain postReactionDomain) {
         this.postDomain = postDomain;
         this.postHastagDomain = postHastagDomain;
         this.postLinkDomain = postLinkDomain;
         this.postUserTagDomain = postUserTagDomain;
         this.postReactionDomain = postReactionDomain;
     }
+
     public Post createPost(CreatePostRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("Request cannot be null");
         }
-        validateRequest(request.getContent(),request.getAuthorId());
+        validateRequest(request.getContent(), request.getAuthorId());
         Post post = new Post();
         post.setContent(request.getContent());
         post.setAuthorId(UUID.fromString(request.getAuthorId()));
@@ -62,18 +63,20 @@ public class PostService {
         post.setLastModifiedDate(new Date());
         postDomain.create(post);
 
+        validateUrls(request.getLinksList());
         createPostLinks(post.getId(), request.getLinksList());
         createPostHashtags(post.getId(), request.getHashtagsList());
         createPostUserTags(post.getId(), request.getTaggedUserIdsList());
         return post;
     }
+
     public Post updatePost(UpdatePostRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("Request cannot be null");
         }
-        validateRequest(request.getContent(),request.getAuthorId());
+        validateRequest(request.getContent(), request.getAuthorId());
 
-        Post post =postDomain.findOne(UUID.fromString(request.getPostId()));
+        Post post = postDomain.findOne(UUID.fromString(request.getPostId()));
         post.setContent(request.getContent());
         post.setAuthorId(UUID.fromString(request.getAuthorId()));
 
@@ -92,20 +95,23 @@ public class PostService {
         post.setLastModifiedDate(new Date());
         postDomain.saveOrUpdate(post);
 
+        validateUrls(request.getLinksList());
         updatePostLinks(post.getId(), request.getLinksList());
         updatePostHashtags(post.getId(), request.getHashtagsList());
         updatePostUserTags(post.getId(), request.getTaggedUserIdsList());
         return post;
     }
-    public List<Post> getPostByUserID(UUID userID){
-        List<Post> listPost=postDomain.getPostsByUserId(userID);
-        for(Post post:listPost){
+
+    public List<Post> getPostByUserID(UUID userID) {
+        List<Post> listPost = postDomain.getPostsByUserId(userID);
+        for (Post post : listPost) {
             post.setHashtags(postHastagDomain.getByPostId(post.getId()));
             post.setPostLinks(postLinkDomain.getByPostId(post.getId()));
             post.setUserTags(postUserTagDomain.getByPostId(post.getId()));
         }
         return listPost;
     }
+
     public List<Post> getPostOnWallOfOtherUser(UUID userId, UUID otherUserId) {
         boolean isFriend = grpcUserService.isOnFriendList(userId.toString(), otherUserId.toString());
         List<PostType> postTypes = new ArrayList<>();
@@ -123,17 +129,19 @@ public class PostService {
 
         return posts;
     }
-    public List<Post> getPostOnDashBoard(UUID userId,int limit,int page){
-        List<UserServiceOuterClass.GetUserResponse> listUser=grpcUserService.getListFriendRequest(String.valueOf(userId),limit,page);
-        List<PostType> postType=new ArrayList<>();
+
+    public List<Post> getPostOnDashBoard(UUID userId, int limit, int page) {
+        List<UserServiceOuterClass.GetUserResponse> listUser = grpcUserService
+                .getListFriendRequest(String.valueOf(userId), limit, page);
+        List<PostType> postType = new ArrayList<>();
         postType.add(PostType.PUBLIC);
         postType.add(PostType.FRIEND);
-        List<Post> listPost=new ArrayList<>();
-        for(UserServiceOuterClass.GetUserResponse user:listUser){
-            List<Post> postOfUser=postDomain.getByPostType(UUID.fromString(user.getId()),postType);
+        List<Post> listPost = new ArrayList<>();
+        for (UserServiceOuterClass.GetUserResponse user : listUser) {
+            List<Post> postOfUser = postDomain.getByPostType(UUID.fromString(user.getId()), postType);
             listPost.addAll(postOfUser);
         }
-        List<Post> postOfMine=postDomain.getPostsByUserId(userId);
+        List<Post> postOfMine = postDomain.getPostsByUserId(userId);
         listPost.addAll(postOfMine);
         for (Post post : listPost) {
             post.setHashtags(postHastagDomain.getByPostId(post.getId()));
@@ -142,29 +150,30 @@ public class PostService {
         }
         return listPost;
     }
-    public void CreatePostReaction(CreatePostReactionRequest request){
-        Post post=postDomain.getPostById(UUID.fromString(request.getPostId()));
-        if(post==null){
-            throw new IllegalArgumentException("Post not found: " );
+
+    public void CreatePostReaction(CreatePostReactionRequest request) {
+        Post post = postDomain.getPostById(UUID.fromString(request.getPostId()));
+        if (post == null) {
+            throw new IllegalArgumentException("Post not found: ");
         }
-        List<UUID> listReaction=post.getLikedUserIds();
-        int likeCount=post.getLikeCount();
-        if(listReaction.contains(UUID.fromString(request.getUserId()))){
+        List<UUID> listReaction = post.getLikedUserIds();
+        int likeCount = post.getLikeCount();
+        if (listReaction.contains(UUID.fromString(request.getUserId()))) {
             return;
-        }
-        else{
-            likeCount =+1;
-        listReaction.add(UUID.fromString(request.getUserId()));
+        } else {
+            likeCount = +1;
+            listReaction.add(UUID.fromString(request.getUserId()));
         }
         post.setLikeCount(likeCount);
         post.setLikedUserIds(listReaction);
         postDomain.saveOrUpdate(post);
-        PostReaction postReaction=new PostReaction();
+        PostReaction postReaction = new PostReaction();
         postReaction.setPostId(UUID.fromString(request.getPostId()));
         postReaction.setUserId(UUID.fromString(request.getUserId()));
         postReaction.setReactionType(ReactionType.valueOf(request.getReactionType()));
         postReactionDomain.create(postReaction);
     }
+
     private void validateRequest(String content, String authorId) {
         if (content == null || content.isBlank()) {
             throw new IllegalArgumentException("Post content is required");
@@ -174,6 +183,7 @@ public class PostService {
         }
         parseUUID(authorId, "Invalid authorId");
     }
+
     private UUID parseUUID(String value, String errorMessage) {
         try {
             return UUID.fromString(value.trim());
@@ -183,7 +193,8 @@ public class PostService {
     }
 
     private void createPostLinks(UUID postId, List<String> linksList) {
-        if (linksList == null || linksList.isEmpty()) return;
+        if (linksList == null || linksList.isEmpty())
+            return;
         PostLink postLink = new PostLink();
         postLink.setContent(List.copyOf(linksList));
         postLink.setPostId(postId);
@@ -191,7 +202,8 @@ public class PostService {
     }
 
     private void createPostHashtags(UUID postId, List<String> hashtagsList) {
-        if (hashtagsList == null || hashtagsList.isEmpty()) return;
+        if (hashtagsList == null || hashtagsList.isEmpty())
+            return;
         PostHastag postHashtag = new PostHastag();
         postHashtag.setContent(List.copyOf(hashtagsList));
         postHashtag.setPostId(postId);
@@ -199,7 +211,8 @@ public class PostService {
     }
 
     private void createPostUserTags(UUID postId, List<String> taggedUserIds) {
-        if (taggedUserIds == null || taggedUserIds.isEmpty()) return;
+        if (taggedUserIds == null || taggedUserIds.isEmpty())
+            return;
 
         for (String userIdStr : taggedUserIds) {
             UUID userId = parseUUID(userIdStr, "Invalid user ID in tagged users");
@@ -212,8 +225,10 @@ public class PostService {
             postUserTagDomain.create(postUserTag);
         }
     }
+
     private void updatePostLinks(UUID postId, List<String> linksList) {
-        if (linksList == null || linksList.isEmpty()) return;
+        if (linksList == null || linksList.isEmpty())
+            return;
         PostLink postLink = postLinkDomain.getByPostId(postId);
         postLink.setContent(List.copyOf(linksList));
         postLink.setPostId(postId);
@@ -221,17 +236,19 @@ public class PostService {
     }
 
     private void updatePostHashtags(UUID postId, List<String> hashtagsList) {
-        if (hashtagsList == null || hashtagsList.isEmpty()) return;
-        PostHastag postHashtag =postHastagDomain.getByPostId(postId);
+        if (hashtagsList == null || hashtagsList.isEmpty())
+            return;
+        PostHastag postHashtag = postHastagDomain.getByPostId(postId);
         postHashtag.setContent(List.copyOf(hashtagsList));
         postHashtag.setPostId(postId);
         postHastagDomain.saveOrUpdate(postHashtag);
     }
 
     private void updatePostUserTags(UUID postId, List<String> taggedUserIds) {
-        if (taggedUserIds == null || taggedUserIds.isEmpty()) return;
-         List<PostUserTag> userTags = postUserTagDomain.getByPostId(postId);
-         postUserTagDomain.destroyAll(userTags.stream().map(PostUserTag::getId).collect(Collectors.toList()));
+        if (taggedUserIds == null || taggedUserIds.isEmpty())
+            return;
+        List<PostUserTag> userTags = postUserTagDomain.getByPostId(postId);
+        postUserTagDomain.destroyAll(userTags.stream().map(PostUserTag::getId).collect(Collectors.toList()));
         for (String userIdStr : taggedUserIds) {
             UUID userId = parseUUID(userIdStr, "Invalid user ID in tagged users");
             if (grpcUserService.getUser(userId.toString()) == null) {
@@ -244,4 +261,23 @@ public class PostService {
         }
     }
 
+    private boolean isValidUrl(String url) {
+        try {
+            URI uri = URI.create(url);
+            uri.toURL();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void validateUrls(List<String> urls) {
+        if (urls != null) {
+            for (String url : urls) {
+                if (!isValidUrl(url)) {
+                    throw new IllegalArgumentException("Invalid URL: " + url);
+                }
+            }
+        }
+    }
 }
