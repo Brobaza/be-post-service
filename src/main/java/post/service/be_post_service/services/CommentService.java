@@ -10,6 +10,7 @@ import post.service.be_post_service.grpc.CreateCommentReactionRequest;
 import post.service.be_post_service.grpc.CreateCommentRequest;
 import post.service.be_post_service.grpc.UpdateCommentRequest;
 
+import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -62,6 +63,7 @@ public class CommentService {
         comment.setImages(images);
         commentDomain.create(comment);
 
+        validateUrls(request.getLinksList());
         createCommentLinks(comment.getId(), request.getLinksList());
         createCommentHashtags(comment.getId(), request.getHashtagsList());
         createCommentUserTags(comment.getId(), request.getTaggedUserIdsList());
@@ -96,6 +98,7 @@ public class CommentService {
         comment.setImages(images);
         commentDomain.saveOrUpdate(comment);
 
+        validateUrls(request.getLinksList());
         updateCommentLinks(comment.getId(), request.getLinksList());
         updateCommentHashtags(comment.getId(), request.getHashtagsList());
         updateCommentUserTags(comment.getId(), request.getTaggedUserIdsList());
@@ -212,6 +215,25 @@ public class CommentService {
             commentUserTag.setComment_id(commentId);
             commentUserTag.setUser_id(userId);
             commentUserTagDomain.saveOrUpdate(commentUserTag);
+        }
+    }
+    private boolean isValidUrl(String url) {
+        try {
+            URI uri = URI.create(url);
+            uri.toURL();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void validateUrls(List<String> urls) {
+        if (urls != null) {
+            for (String url : urls) {
+                if (!isValidUrl(url)) {
+                    throw new IllegalArgumentException("Invalid URL: " + url);
+                }
+            }
         }
     }
 }

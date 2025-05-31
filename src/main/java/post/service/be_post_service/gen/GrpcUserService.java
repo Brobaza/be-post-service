@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import post.service.be_post_service.grpc.CreateStoryResponse;
+import post.service.be_post_service.grpc.MetaData;
 import userProtoService.UserServiceGrpc;
 import userProtoService.UserServiceOuterClass;
 import userProtoService.UserServiceOuterClass.GetUserRequest;
@@ -47,6 +49,26 @@ public class GrpcUserService {
                 .setUserId(userId)
                 .setFriendId(friendId)
                 .build();
+        MetaData metaData = MetaData.newBuilder()
+                .setRespcode("200")
+                .setMessage("This is friend")
+                .build();
+        try {
+            UserServiceOuterClass.isOnFriendListRes response = UserServiceOuterClass.isOnFriendListRes.newBuilder()
+                    .setMetadata(metaData)
+                    .build();
+        } catch (Exception e) {
+            MetaData errorMetaData = MetaData.newBuilder()
+                    .setRespcode("500")
+                    .setMessage(e.getMessage())
+                    .build();
+            UserServiceOuterClass.isOnFriendListRes errorResponse = UserServiceOuterClass.isOnFriendListRes.newBuilder()
+                    .setMetadata(errorMetaData)
+                    .build();
+
+            return false;
+        }
+
         return userStub.isOnFriendList(request).getConfirm();
     }
 
@@ -57,7 +79,8 @@ public class GrpcUserService {
                 .build();
         // Gọi gRPC để lấy kết quả, bao gồm cả metadata
         UserServiceOuterClass.isOnFriendListRes response = userStub.isOnFriendList(request);
-        // response đã bao gồm metadata (nếu proto định nghĩa)
+        // response đã bao gồm metadata
         return response;
     }
+
 }
