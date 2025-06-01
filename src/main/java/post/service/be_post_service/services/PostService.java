@@ -1,10 +1,15 @@
 package post.service.be_post_service.services;
 
 import java.net.URI;
+import java.net.URL;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import post.service.be_post_service.domain.*;
@@ -17,6 +22,7 @@ import post.service.be_post_service.grpc.CreatePostRequest;
 import post.service.be_post_service.grpc.GetPostByUserIdRequest;
 import post.service.be_post_service.grpc.UpdatePostRequest;
 import userProtoService.UserServiceOuterClass;
+
 
 @Service
 public class PostService {
@@ -60,13 +66,28 @@ public class PostService {
         List<String> images = request.getImagesList() != null ? request.getImagesList() : Collections.emptyList();
         post.setImages(images);
         post.setPostType(PostType.valueOf(request.getPostType()));
-        post.setLastModifiedDate(new Date());
+        post.setCreatedDate(new Date());
         postDomain.create(post);
-
-        validateUrls(request.getLinksList());
-        createPostLinks(post.getId(), request.getLinksList());
-        createPostHashtags(post.getId(), request.getHashtagsList());
+        String urlRegex = "(https?://[\\w\\-\\.\\?\\&\\=\\/%#]+)";
+        Pattern pattern = Pattern.compile(urlRegex);
+        Matcher matcher = pattern.matcher(request.getContent());
+        List<String> links = new ArrayList<>();
+        while (matcher.find()) {
+            links.add(matcher.group());
+        }
+        String hashtagRegex = "#[\\p{L}0-9_]+";
+        Pattern hashtagPattern = Pattern.compile(hashtagRegex);
+        Matcher hashtagMatcher = hashtagPattern.matcher(request.getContent());
+        List<String> hashtags = new ArrayList<>();
+        while (hashtagMatcher.find()) {
+            hashtags.add(hashtagMatcher.group());
+        }
+        createPostLinks(post.getId(), links);
+        createPostHashtags(post.getId(),hashtags);
         createPostUserTags(post.getId(), request.getTaggedUserIdsList());
+        post.setHashtags(postHastagDomain.getByPostId(post.getId()));
+        post.setPostLinks(postLinkDomain.getByPostId(post.getId()));
+        post.setUserTags(postUserTagDomain.getByPostId(post.getId()));
         return post;
     }
 
@@ -95,16 +116,33 @@ public class PostService {
         post.setLastModifiedDate(new Date());
         postDomain.saveOrUpdate(post);
 
-        validateUrls(request.getLinksList());
-        updatePostLinks(post.getId(), request.getLinksList());
-        updatePostHashtags(post.getId(), request.getHashtagsList());
+        String urlRegex = "(https?://[\\w\\-\\.\\?\\&\\=\\/%#]+)";
+        Pattern pattern = Pattern.compile(urlRegex);
+        Matcher matcher = pattern.matcher(request.getContent());
+        List<String> links = new ArrayList<>();
+        while (matcher.find()) {
+            links.add(matcher.group());
+        }
+        String hashtagRegex = "#[\\p{L}0-9_]+";
+        Pattern hashtagPattern = Pattern.compile(hashtagRegex);
+        Matcher hashtagMatcher = hashtagPattern.matcher(request.getContent());
+        List<String> hashtags = new ArrayList<>();
+        while (hashtagMatcher.find()) {
+            hashtags.add(hashtagMatcher.group());
+        }
+        updatePostLinks(post.getId(), links);
+        updatePostHashtags(post.getId(),hashtags);
         updatePostUserTags(post.getId(), request.getTaggedUserIdsList());
+        post.setHashtags(postHastagDomain.getByPostId(post.getId()));
+        post.setPostLinks(postLinkDomain.getByPostId(post.getId()));
+        post.setUserTags(postUserTagDomain.getByPostId(post.getId()));
         return post;
     }
 
-    public List<Post> getPostByUserID(UUID userID) {
-        List<Post> listPost = postDomain.getPostsByUserId(userID);
-        for (Post post : listPost) {
+    public List<Post> getPostByUserID(UUID userID,int limit,int page){
+        PageRequest pageable = PageRequest.of(page - 1, limit, Sort.by("createdDate").descending());
+        List<Post> listPost=postDomain.getPostsByUserId(userID,pageable);
+        for(Post post:listPost){
             post.setHashtags(postHastagDomain.getByPostId(post.getId()));
             post.setPostLinks(postLinkDomain.getByPostId(post.getId()));
             post.setUserTags(postUserTagDomain.getByPostId(post.getId()));
@@ -112,15 +150,15 @@ public class PostService {
         return listPost;
     }
 
-    public List<Post> getPostOnWallOfOtherUser(UUID userId, UUID otherUserId) {
+    public List<Post> getPostOnWallOfOtherUser(UUID userId, UUID otherUserId,int limit,int page) {
         boolean isFriend = grpcUserService.isOnFriendList(userId.toString(), otherUserId.toString());
         List<PostType> postTypes = new ArrayList<>();
         postTypes.add(PostType.PUBLIC);
         if (isFriend) {
             postTypes.add(PostType.FRIEND);
         }
-
-        List<Post> posts = postDomain.getByPostType(otherUserId, postTypes);
+        PageRequest pageable = PageRequest.of(page - 1, limit, Sort.by("createdDate").descending());
+        List<Post> posts = postDomain.getByPostType(otherUserId, postTypes,pageable);
         for (Post post : posts) {
             post.setHashtags(postHastagDomain.getByPostId(post.getId()));
             post.setPostLinks(postLinkDomain.getByPostId(post.getId()));
@@ -131,26 +169,32 @@ public class PostService {
     }
 
     public List<Post> getPostOnDashBoard(UUID userId, int limit, int page) {
-        List<UserServiceOuterClass.GetUserResponse> listUser = grpcUserService
-                .getListFriendRequest(String.valueOf(userId), limit, page);
+        List<UserServiceOuterClass.GetUserResponse> listUser = grpcUserService.getListFriendRequest(String.valueOf(userId), limit, page);
+        List<UUID> listUserId = listUser.stream().map(user -> UUID.fromString(user.getId())).collect(Collectors.toList());
+        listUserId.add(userId);
         List<PostType> postType = new ArrayList<>();
         postType.add(PostType.PUBLIC);
         postType.add(PostType.FRIEND);
-        List<Post> listPost = new ArrayList<>();
-        for (UserServiceOuterClass.GetUserResponse user : listUser) {
-            List<Post> postOfUser = postDomain.getByPostType(UUID.fromString(user.getId()), postType);
-            listPost.addAll(postOfUser);
-        }
-        List<Post> postOfMine = postDomain.getPostsByUserId(userId);
-        listPost.addAll(postOfMine);
+        PageRequest pageable = PageRequest.of(page - 1, limit, Sort.by("createdDate").descending());
+        List<Post> listPost=postDomain.getPostOnDashBoard(listUserId, postType,pageable);
         for (Post post : listPost) {
             post.setHashtags(postHastagDomain.getByPostId(post.getId()));
             post.setPostLinks(postLinkDomain.getByPostId(post.getId()));
             post.setUserTags(postUserTagDomain.getByPostId(post.getId()));
         }
+
         return listPost;
     }
-
+    public Post getPostById(UUID postId) {
+        Post post = postDomain.getPostById(postId);
+        if (post == null) {
+            throw new IllegalArgumentException("Post not found: " + postId);
+        }
+        post.setHashtags(postHastagDomain.getByPostId(postId));
+        post.setPostLinks(postLinkDomain.getByPostId(postId));
+        post.setUserTags(postUserTagDomain.getByPostId(postId));
+        return post;
+    }
     public void CreatePostReaction(CreatePostReactionRequest request) {
         Post post = postDomain.getPostById(UUID.fromString(request.getPostId()));
         if (post == null) {

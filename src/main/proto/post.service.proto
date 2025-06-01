@@ -16,6 +16,7 @@ service PostService {
     rpc GetListPostOnOtherUser(GetListPostOnOtherUserReq) returns (ListPostResponse);
     rpc GetListPostOnDashBoard(GetPostOnDashBoardReq) returns (ListPostResponse);
     rpc CreateReactionPost(CreatePostReactionRequest) returns (MetaData);
+    rpc GetPostDetail(GetPostDetailRequest) returns (CreatePostResponse);
     //comment
     rpc UpdateComment(UpdateCommentRequest) returns(CreateCommentResponse){}
     rpc CreateComment(CreateCommentRequest) returns (CreateCommentResponse){}
@@ -34,15 +35,15 @@ message GetListPostRequest {
 message CreatePostRequest {
     string author_id=1;
     string content =2;
-    repeated string hashtags = 3;
-    repeated string links = 4;
-    repeated string taggedUserIds = 5;
-    repeated string images = 6;
-    string postParentId=7;
-    string postType=8;
+    repeated string taggedUserIds = 3;
+    repeated string images = 4;
+    string postParentId=5;
+    string postType=6;
 }
 message GetPostByUserIdRequest {
     string userId=1;
+    int32 limit = 2;
+    int32 page = 3;
 }
 message GetPostOnDashBoardReq{
     string userId = 1;
@@ -61,13 +62,11 @@ message CreatePostReactionRequest{
 message UpdatePostRequest {
     string author_id=1;
     string content =2;
-    repeated string hashtags = 3;
-    repeated string links = 4;
-    repeated string taggedUserIds = 5;
-    repeated string images = 6;
-    string postParentId=7;
-    string postId=8;
-    string postType=9;
+    repeated string taggedUserIds = 3;
+    repeated string images = 4;
+    string postParentId=5;
+    string postId=6;
+    string postType=7;
 }
 message CreatePostResponse{
     string author_id=1;
@@ -79,13 +78,17 @@ message CreatePostResponse{
     string postParentId=7;
     string postId=8;
     string postType=9;
-    MetaData metaData=10;
+    string createdAt=10;
+    repeated CreateCommentResponse comment=11;
+    MetaData metaData=12;
+}
+message GetPostDetailRequest{
+    string postId=1;
 }
 message Post {
     string id = 1;
     string author_id = 2;
 }
-
 message GetListPostResponse {
     repeated Post listPost = 1;
     int32 total = 2;
@@ -105,6 +108,8 @@ message TestPostResponse {
 message GetListPostOnOtherUserReq{
     string userId=1;
     string friendId=2;
+    int32 limit = 3;
+    int32 page = 4;
 }
 message MetaData{
     string respcode=1;
@@ -113,23 +118,19 @@ message MetaData{
 message CreateCommentRequest {
     string author_id=1;
     string content =2;
-    repeated string hashtags = 3;
-    repeated string links = 4;
-    repeated string taggedUserIds = 5;
-    repeated string images = 6;
-    string commentParentId=7;
-    string postId=8;
+    repeated string taggedUserIds = 3;
+    repeated string images = 4;
+    string commentParentId=5;
+    string postId=6;
 }
 message UpdateCommentRequest {
     string author_id=1;
     string content =2;
-    repeated string hashtags = 3;
-    repeated string links = 4;
-    repeated string taggedUserIds = 5;
-    repeated string images = 6;
-    string commentParentId=7;
-    string postId=8;
-    string commentId=9;
+    repeated string taggedUserIds = 3;
+    repeated string images = 4;
+    string commentParentId=5;
+    string postId=6;
+    string commentId=7;
 }
 message CreateCommentResponse{
     string author_id=1;
@@ -141,7 +142,8 @@ message CreateCommentResponse{
     string commentParentId=7;
     string postId=8;
     string commentId=9;
-    MetaData metaData=10;
+    string createAt=10;
+    MetaData metaData=11;
 }
 message GetListCommentRequest{
     string postId=1;

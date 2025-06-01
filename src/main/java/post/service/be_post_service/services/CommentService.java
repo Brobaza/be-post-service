@@ -1,6 +1,9 @@
 package post.service.be_post_service.services;
-
+import java.net.URI;
+import java.net.URL;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import post.service.be_post_service.domain.*;
 import post.service.be_post_service.entity.*;
@@ -11,9 +14,9 @@ import post.service.be_post_service.grpc.CreateCommentRequest;
 import post.service.be_post_service.grpc.UpdateCommentRequest;
 
 import java.net.URI;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -61,11 +64,25 @@ public class CommentService {
 
         List<String> images = request.getImagesList() != null ? request.getImagesList() : Collections.emptyList();
         comment.setImages(images);
+        comment.setCreatedDate(new Date());
         commentDomain.create(comment);
 
-        validateUrls(request.getLinksList());
-        createCommentLinks(comment.getId(), request.getLinksList());
-        createCommentHashtags(comment.getId(), request.getHashtagsList());
+        String urlRegex = "(https?://[\\w\\-\\.\\?\\&\\=\\/%#]+)";
+        Pattern pattern = Pattern.compile(urlRegex);
+        Matcher matcher = pattern.matcher(request.getContent());
+        List<String> links = new ArrayList<>();
+        while (matcher.find()) {
+            links.add(matcher.group());
+        }
+        String hashtagRegex = "#[\\p{L}0-9_]+";
+        Pattern hashtagPattern = Pattern.compile(hashtagRegex);
+        Matcher hashtagMatcher = hashtagPattern.matcher(request.getContent());
+        List<String> hashtags = new ArrayList<>();
+        while (hashtagMatcher.find()) {
+            hashtags.add(hashtagMatcher.group());
+        }
+        createCommentLinks(comment.getId(),links);
+        createCommentHashtags(comment.getId(),hashtags);
         createCommentUserTags(comment.getId(), request.getTaggedUserIdsList());
         return comment;
     }
@@ -96,11 +113,24 @@ public class CommentService {
 
         List<String> images = request.getImagesList() != null ? request.getImagesList() : Collections.emptyList();
         comment.setImages(images);
+        comment.setLastModifiedDate(new Date());
         commentDomain.saveOrUpdate(comment);
-
-        validateUrls(request.getLinksList());
-        updateCommentLinks(comment.getId(), request.getLinksList());
-        updateCommentHashtags(comment.getId(), request.getHashtagsList());
+        String urlRegex = "(https?://[\\w\\-\\.\\?\\&\\=\\/%#]+)";
+        Pattern pattern = Pattern.compile(urlRegex);
+        Matcher matcher = pattern.matcher(request.getContent());
+        List<String> links = new ArrayList<>();
+        while (matcher.find()) {
+            links.add(matcher.group());
+        }
+        String hashtagRegex = "#[\\p{L}0-9_]+";
+        Pattern hashtagPattern = Pattern.compile(hashtagRegex);
+        Matcher hashtagMatcher = hashtagPattern.matcher(request.getContent());
+        List<String> hashtags = new ArrayList<>();
+        while (hashtagMatcher.find()) {
+            hashtags.add(hashtagMatcher.group());
+        }
+        updateCommentLinks(comment.getId(),links);
+        updateCommentHashtags(comment.getId(), hashtags);
         updateCommentUserTags(comment.getId(), request.getTaggedUserIdsList());
         return comment;
     }
@@ -235,5 +265,30 @@ public class CommentService {
                 }
             }
         }
+    }
+    public List<Comment> get10Comment(UUID postId){
+        Pageable pageable = PageRequest.of(0, 10);
+        List<Comment> comments = commentDomain.getNumberOfComment(postId, pageable);
+        for(Comment comment:comments){
+            CommentLink links = commentLinkDomain.getByCommentId(comment.getId());
+            CommentHastag hashtags = commentHastagDomain.getByCommentId(comment.getId());
+            List<CommentUserTag> userTags = commentUserTagDomain.getByCommentId(comment.getId());
+            comment.setCommentLinks(links);
+            comment.setUserTags(userTags);
+            comment.setHashtags(hashtags);
+        }
+       return comments;
+    }
+    public List<Comment> getAllCommentByPostId(UUID postId){
+        List<Comment> comments = commentDomain.getByPostId(postId);
+        for(Comment comment:comments){
+            CommentLink links = commentLinkDomain.getByCommentId(comment.getId());
+            CommentHastag hashtags = commentHastagDomain.getByCommentId(comment.getId());
+            List<CommentUserTag> userTags = commentUserTagDomain.getByCommentId(comment.getId());
+            comment.setCommentLinks(links);
+            comment.setUserTags(userTags);
+            comment.setHashtags(hashtags);
+        }
+        return comments;
     }
 }

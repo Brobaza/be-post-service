@@ -1,5 +1,6 @@
 package post.service.be_post_service.domain;
 
+import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import post.service.be_post_service.base.BaseDomain;
@@ -25,6 +26,9 @@ public class CommentDomain extends BaseDomain<Comment, UUID> {
     }
     public List<Comment> getByPostId(UUID postId){
         return commentRepository.getByPostId(postId);
+    }
+    public List<Comment> getNumberOfComment(UUID postId, Pageable page) {
+        return commentRepository.getNumberOfComment(postId, page);
     }
 }
 

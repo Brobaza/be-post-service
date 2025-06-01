@@ -3,6 +3,7 @@ package post.service.be_post_service.repositories;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -27,11 +28,9 @@ public interface PostRepository extends BaseRepository<Post, UUID> {
     Post getPostById(
             @Param("post_id") final UUID post_id
     );
-    @Query("select c from Post c "
-            + "where c.authorId = :user_id"
-    )
+    @Query("SELECT p FROM Post p WHERE p.authorId = :user_id ORDER BY p.createdDate DESC")
     List<Post> getPostsByUserId(
-            @Param("user_id") final UUID user_id
+            @Param("user_id") final UUID user_id, Pageable pageable
     );
     @Query("select c from Post c "
             + " where c.postType in :postType"
@@ -40,6 +39,17 @@ public interface PostRepository extends BaseRepository<Post, UUID> {
     )
     List<Post> getPostByPostType(
             @Param("user_id") final UUID user_id,
-            @Param("postType") final List<PostType> postType
+            @Param("postType") final List<PostType> postType,
+            Pageable pageable
+    );
+    @Query("select c from Post c "
+            + " where c.postType in :postType"
+            + " and c.authorId in :user_id"
+            + " order by c.createdDate desc"
+    )
+    List<Post> getPostOnDashBoard(
+            @Param("user_id") final List<UUID> user_id,
+            @Param("postType") final List<PostType> postType,
+            Pageable pageable
     );
 }
