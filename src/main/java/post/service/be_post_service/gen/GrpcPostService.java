@@ -234,6 +234,15 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
 
             for (Post post : listPost) {
                 List<Comment> comments = commentService.get10Comment(post.getId());
+                List<UUID> likedUser = post.getLikedUserIds();
+                List<String> lastThreeAsString = new ArrayList<>();
+                if (likedUser != null && !likedUser.isEmpty()) {
+                    int size = likedUser.size();
+                    List<UUID> lastThree = likedUser.subList(Math.max(size - 3, 0), size);
+                    lastThreeAsString = lastThree.stream()
+                            .map(UUID::toString)
+                            .collect(Collectors.toList());
+                }
                 CreatePostResponse response = CreatePostResponse.newBuilder()
                         .setAuthorId(post.getAuthorId() != null ? post.getAuthorId().toString() : "")
                         .setContent(post.getContent() != null ? post.getContent() : "")
@@ -250,7 +259,11 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
                         .setPostId(post.getId() != null ? post.getId().toString() : "")
                         .setPostType(post.getPostType() != null ? post.getPostType().toString() : "")
                         .addAllComment(comments != null ? mapCommentResponse(comments) : Collections.emptyList())
+                        .setLikedCount(post.getLikeCount())
+                        .setSharedCount(post.getShareCount())
+                        .setCommandCount(post.getCommentCount())
                         .setCreatedAt(post.getCreatedDate() != null ? post.getCreatedDate().toString() : "")
+                        .addAllListUserLikedIds(lastThreeAsString)
                         .build();
 
                 postResponse.add(response);
@@ -259,6 +272,16 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
         }
         private CreatePostResponse mapPostToResponses(Post post) {
                 List<Comment> comments = commentService.getAllCommentByPostId(post.getId());
+            List<UUID> likedUser = post.getLikedUserIds();
+
+            List<String> lastThreeAsString = new ArrayList<>();
+            if (likedUser != null && !likedUser.isEmpty()) {
+                int size = likedUser.size();
+                List<UUID> lastThree = likedUser.subList(Math.max(size - 3, 0), size);
+                lastThreeAsString = lastThree.stream()
+                        .map(UUID::toString)
+                        .collect(Collectors.toList());
+            }
                 CreatePostResponse response = CreatePostResponse.newBuilder()
                         .setAuthorId(post.getAuthorId() != null ? post.getAuthorId().toString() : "")
                         .setContent(post.getContent() != null ? post.getContent() : "")
@@ -275,6 +298,11 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
                         .setPostId(post.getId() != null ? post.getId().toString() : "")
                         .setPostType(post.getPostType() != null ? post.getPostType().toString() : "")
                         .addAllComment(comments != null ? mapCommentResponse(comments) : Collections.emptyList())
+                        .setLikedCount(post.getLikeCount())
+                        .setSharedCount(post.getShareCount())
+                        .setCommandCount(post.getCommentCount())
+                        .addAllListUserLikedIds(lastThreeAsString)
+                        .setCreatedAt(post.getCreatedDate() != null ? post.getCreatedDate().toString() : "")
                         .build();
             return response;
         }

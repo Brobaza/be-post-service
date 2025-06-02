@@ -84,6 +84,8 @@ public class CommentService {
         createCommentLinks(comment.getId(),links);
         createCommentHashtags(comment.getId(),hashtags);
         createCommentUserTags(comment.getId(), request.getTaggedUserIdsList());
+        post.setCommentCount(post.getCommentCount()+1);
+        postDomain.saveOrUpdate(post);
         return comment;
     }
     public Comment updateComment(UpdateCommentRequest request) {
