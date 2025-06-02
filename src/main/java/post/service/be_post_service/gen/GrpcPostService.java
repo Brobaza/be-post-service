@@ -250,6 +250,7 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
                         .setPostId(post.getId() != null ? post.getId().toString() : "")
                         .setPostType(post.getPostType() != null ? post.getPostType().toString() : "")
                         .addAllComment(comments != null ? mapCommentResponse(comments) : Collections.emptyList())
+                        .setCreatedAt(post.getCreatedDate() != null ? post.getCreatedDate().toString() : "")
                         .build();
 
                 postResponse.add(response);

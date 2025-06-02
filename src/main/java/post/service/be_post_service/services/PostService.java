@@ -23,7 +23,6 @@ import post.service.be_post_service.grpc.GetPostByUserIdRequest;
 import post.service.be_post_service.grpc.UpdatePostRequest;
 import userProtoService.UserServiceOuterClass;
 
-
 @Service
 public class PostService {
 
@@ -83,7 +82,7 @@ public class PostService {
             hashtags.add(hashtagMatcher.group());
         }
         createPostLinks(post.getId(), links);
-        createPostHashtags(post.getId(),hashtags);
+        createPostHashtags(post.getId(), hashtags);
         createPostUserTags(post.getId(), request.getTaggedUserIdsList());
         post.setHashtags(postHastagDomain.getByPostId(post.getId()));
         post.setPostLinks(postLinkDomain.getByPostId(post.getId()));
@@ -131,7 +130,7 @@ public class PostService {
             hashtags.add(hashtagMatcher.group());
         }
         updatePostLinks(post.getId(), links);
-        updatePostHashtags(post.getId(),hashtags);
+        updatePostHashtags(post.getId(), hashtags);
         updatePostUserTags(post.getId(), request.getTaggedUserIdsList());
         post.setHashtags(postHastagDomain.getByPostId(post.getId()));
         post.setPostLinks(postLinkDomain.getByPostId(post.getId()));
@@ -139,10 +138,10 @@ public class PostService {
         return post;
     }
 
-    public List<Post> getPostByUserID(UUID userID,int limit,int page){
+    public List<Post> getPostByUserID(UUID userID, int limit, int page) {
         PageRequest pageable = PageRequest.of(page - 1, limit, Sort.by("createdDate").descending());
-        List<Post> listPost=postDomain.getPostsByUserId(userID,pageable);
-        for(Post post:listPost){
+        List<Post> listPost = postDomain.getPostsByUserId(userID, pageable);
+        for (Post post : listPost) {
             post.setHashtags(postHastagDomain.getByPostId(post.getId()));
             post.setPostLinks(postLinkDomain.getByPostId(post.getId()));
             post.setUserTags(postUserTagDomain.getByPostId(post.getId()));
@@ -150,7 +149,7 @@ public class PostService {
         return listPost;
     }
 
-    public List<Post> getPostOnWallOfOtherUser(UUID userId, UUID otherUserId,int limit,int page) {
+    public List<Post> getPostOnWallOfOtherUser(UUID userId, UUID otherUserId, int limit, int page) {
         boolean isFriend = grpcUserService.isOnFriendList(userId.toString(), otherUserId.toString());
         List<PostType> postTypes = new ArrayList<>();
         postTypes.add(PostType.PUBLIC);
@@ -158,7 +157,7 @@ public class PostService {
             postTypes.add(PostType.FRIEND);
         }
         PageRequest pageable = PageRequest.of(page - 1, limit, Sort.by("createdDate").descending());
-        List<Post> posts = postDomain.getByPostType(otherUserId, postTypes,pageable);
+        List<Post> posts = postDomain.getByPostType(otherUserId, postTypes, pageable);
         for (Post post : posts) {
             post.setHashtags(postHastagDomain.getByPostId(post.getId()));
             post.setPostLinks(postLinkDomain.getByPostId(post.getId()));
@@ -169,14 +168,20 @@ public class PostService {
     }
 
     public List<Post> getPostOnDashBoard(UUID userId, int limit, int page) {
-        List<UserServiceOuterClass.GetUserResponse> listUser = grpcUserService.getListFriendRequest(String.valueOf(userId), limit, page);
-        List<UUID> listUserId = listUser.stream().map(user -> UUID.fromString(user.getId())).collect(Collectors.toList());
+        List<UserServiceOuterClass.GetUserResponse> listUser = grpcUserService
+                .getListFriendRequest(String.valueOf(userId), limit, page);
+        List<UUID> listUserId = listUser.stream().map(user -> UUID.fromString(user.getId()))
+                .collect(Collectors.toList());
+
+        System.out.println("List User ID: " + listUserId);
+
         listUserId.add(userId);
         List<PostType> postType = new ArrayList<>();
         postType.add(PostType.PUBLIC);
         postType.add(PostType.FRIEND);
         PageRequest pageable = PageRequest.of(page - 1, limit, Sort.by("createdDate").descending());
-        List<Post> listPost=postDomain.getPostOnDashBoard(listUserId, postType,pageable);
+        System.out.println("listUserId: " + listUserId);
+        List<Post> listPost = postDomain.getPostOnDashBoard(listUserId, pageable);
         for (Post post : listPost) {
             post.setHashtags(postHastagDomain.getByPostId(post.getId()));
             post.setPostLinks(postLinkDomain.getByPostId(post.getId()));
@@ -185,6 +190,7 @@ public class PostService {
 
         return listPost;
     }
+
     public Post getPostById(UUID postId) {
         Post post = postDomain.getPostById(postId);
         if (post == null) {
@@ -195,6 +201,7 @@ public class PostService {
         post.setUserTags(postUserTagDomain.getByPostId(postId));
         return post;
     }
+
     public void CreatePostReaction(CreatePostReactionRequest request) {
         Post post = postDomain.getPostById(UUID.fromString(request.getPostId()));
         if (post == null) {

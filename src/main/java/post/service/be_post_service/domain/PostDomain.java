@@ -24,19 +24,24 @@ public class PostDomain extends BaseDomain<Post, UUID> {
     public UUID createPost(Post post) {
         return postRepository.save(post).getId();
     }
+
     public Post getParentPost(UUID id) {
         return postRepository.getParentPost(id);
     }
-    public Post getPostById(UUID id){
+
+    public Post getPostById(UUID id) {
         return postRepository.getPostById(id);
     }
-    public List<Post> getPostsByUserId(UUID userId, Pageable page){
-        return postRepository.getPostsByUserId(userId,page);
+
+    public List<Post> getPostsByUserId(UUID userId, Pageable page) {
+        return postRepository.getPostsByUserId(userId, page);
     }
-    public List<Post> getByPostType(UUID userId, List<PostType> postType, Pageable page){
+
+    public List<Post> getByPostType(UUID userId, List<PostType> postType, Pageable page) {
         return postRepository.getPostByPostType(userId, postType, page);
     }
-    public List<Post> getPostOnDashBoard(List<UUID> userId,List<PostType> postType, Pageable page){
-        return postRepository.getPostOnDashBoard(userId, postType, page);
+
+    public List<Post> getPostOnDashBoard(List<UUID> userId, Pageable page) {
+        return postRepository.getPostOnDashBoard(userId, page);
     }
 }
