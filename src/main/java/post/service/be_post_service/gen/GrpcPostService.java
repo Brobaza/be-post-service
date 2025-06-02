@@ -1,5 +1,7 @@
 package post.service.be_post_service.gen;
 
+import java.text.SimpleDateFormat;
+import org.springframework.beans.factory.annotation.Value;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,7 +31,6 @@ import post.service.be_post_service.services.CommentService;
 import post.service.be_post_service.services.PostService;
 import post.service.be_post_service.services.StoryService;
 import userProtoService.UserServiceOuterClass.GetUserResponse;
-
 @GrpcService
 public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
 
@@ -89,173 +90,242 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
         // post
         @Override
         public void createPost(CreatePostRequest request,
-                        io.grpc.stub.StreamObserver<CreatePostResponse> responseObserver) {
-                try {
-                        Post post = postService.createPost(request);
-                        String authorIdStr = post.getAuthorId() != null ? post.getAuthorId().toString() : "";
-                        MetaData metaData = MetaData.newBuilder()
-                                        .setRespcode("200")
-                                        .setMessage("Post created successfully")
-                                        .build();
-                        CreatePostResponse response = CreatePostResponse.newBuilder()
-                                        .setAuthorId(authorIdStr)
-                                        .setContent(post.getContent() != null ? post.getContent() : "")
-                                        .addAllTaggedUserIds(request.getTaggedUserIdsList())
-                                        .addAllHashtags(request.getHashtagsList())
-                                        .addAllLinks(request.getLinksList())
-                                        .addAllImages(request.getImagesList())
-                                        .setPostParentId(request.getPostParentId())
-                                        .setPostType(post.getPostType() != null ? post.getPostType().name() : "")
-                                        .setMetaData(metaData)
-                                        .build();
+                io.grpc.stub.StreamObserver<CreatePostResponse> responseObserver) {
+            try {
+                Post post = postService.createPost(request);
+                String authorIdStr = post.getAuthorId() != null ? post.getAuthorId().toString() : "";
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String dateString = formatter.format(post.getCreatedDate());
+                MetaData metaData = MetaData.newBuilder()
+                        .setRespcode("200")
+                        .setMessage("Post created successfully")
+                        .build();
+                CreatePostResponse response = CreatePostResponse.newBuilder()
+                        .setAuthorId(authorIdStr)
+                        .setPostId(post.getId() != null ? post.getId().toString() : "")
+                        .setContent(post.getContent() != null ? post.getContent() : "")
+                        .addAllTaggedUserIds(request.getTaggedUserIdsList())
+                        .addAllHashtags(post.getHashtags() != null ? post.getHashtags().getContent() : Collections.emptyList())
+                        .addAllLinks(post.getPostLinks() != null ? post.getPostLinks().getContent() : Collections.emptyList())
+                        .addAllImages(request.getImagesList())
+                        .setPostParentId(request.getPostParentId())
+                        .setPostType(post.getPostType() != null ? post.getPostType().name() : "")
+                        .setCreatedAt(dateString)
+                        .setMetaData(metaData)
+                        .build();
 
-                        responseObserver.onNext(response);
-                        responseObserver.onCompleted();
-                } catch (Exception e) {
-                        MetaData errorMeta = MetaData.newBuilder()
-                                        .setRespcode("500")
-                                        .setMessage("Failed to create post: " + e.getMessage())
-                                        .build();
-                        CreatePostResponse errorResponse = CreatePostResponse.newBuilder()
-                                        .setMetaData(errorMeta)
-                                        .build();
-                        responseObserver.onNext(errorResponse);
-                        responseObserver.onCompleted();
-                }
+                responseObserver.onNext(response);
+                responseObserver.onCompleted();
+            } catch (Exception e) {
+                MetaData errorMeta = MetaData.newBuilder()
+                        .setRespcode("500")
+                        .setMessage("Failed to create post: " + e.getMessage())
+                        .build();
+                CreatePostResponse errorResponse = CreatePostResponse.newBuilder()
+                        .setMetaData(errorMeta)
+                        .build();
+                responseObserver.onNext(errorResponse);
+                responseObserver.onCompleted();
+            }
         }
 
         @Override
         public void updatePost(UpdatePostRequest request,
-                        io.grpc.stub.StreamObserver<CreatePostResponse> responseObserver) {
-                try {
-                        Post post = postService.updatePost(request);
-                        String authorIdStr = post.getAuthorId() != null ? post.getAuthorId().toString() : "";
-                        String postIdStr = post.getId() != null ? post.getId().toString() : "";
-                        MetaData metaData = MetaData.newBuilder()
-                                        .setRespcode("200")
-                                        .setMessage("Post updated successfully")
-                                        .build();
-                        CreatePostResponse response = CreatePostResponse.newBuilder()
-                                        .setPostId(postIdStr)
-                                        .setAuthorId(authorIdStr)
-                                        .setContent(post.getContent() != null ? post.getContent() : "")
-                                        .addAllTaggedUserIds(request.getTaggedUserIdsList())
-                                        .addAllHashtags(request.getHashtagsList())
-                                        .addAllLinks(request.getLinksList())
-                                        .addAllImages(request.getImagesList())
-                                        .setPostParentId(request.getPostParentId())
-                                        .setPostType(post.getPostType() != null ? post.getPostType().name() : "")
-                                        .setMetaData(metaData)
-                                        .build();
+                io.grpc.stub.StreamObserver<CreatePostResponse> responseObserver) {
+            try {
+                Post post = postService.updatePost(request);
+                String authorIdStr = post.getAuthorId() != null ? post.getAuthorId().toString() : "";
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String dateString = formatter.format(post.getLastModifiedDate());
+                String postIdStr = post.getId() != null ? post.getId().toString() : "";
+                MetaData metaData = MetaData.newBuilder()
+                        .setRespcode("200")
+                        .setMessage("Post updated successfully")
+                        .build();
+                CreatePostResponse response = CreatePostResponse.newBuilder()
+                        .setPostId(postIdStr)
+                        .setAuthorId(authorIdStr)
+                        .setContent(post.getContent() != null ? post.getContent() : "")
+                        .addAllTaggedUserIds(request.getTaggedUserIdsList())
+                        .addAllHashtags(post.getHashtags() != null ? post.getHashtags().getContent() : Collections.emptyList())
+                        .addAllLinks(post.getPostLinks() != null ? post.getPostLinks().getContent() : Collections.emptyList())
+                        .addAllImages(request.getImagesList())
+                        .setPostParentId(request.getPostParentId())
+                        .setPostType(post.getPostType() != null ? post.getPostType().name() : "")
+                        .setCreatedAt(dateString)
+                        .setMetaData(metaData)
+                        .build();
 
-                        responseObserver.onNext(response);
-                        responseObserver.onCompleted();
-                } catch (Exception e) {
-                        MetaData errorMeta = MetaData.newBuilder()
-                                        .setRespcode("500")
-                                        .setMessage("Failed to update post: " + e.getMessage())
-                                        .build();
-                        CreatePostResponse errorResponse = CreatePostResponse.newBuilder()
-                                        .setMetaData(errorMeta)
-                                        .build();
-                        responseObserver.onNext(errorResponse);
-                        responseObserver.onCompleted();
-                }
+                responseObserver.onNext(response);
+                responseObserver.onCompleted();
+            } catch (Exception e) {
+                MetaData errorMeta = MetaData.newBuilder()
+                        .setRespcode("500")
+                        .setMessage("Failed to update post: " + e.getMessage())
+                        .build();
+                CreatePostResponse errorResponse = CreatePostResponse.newBuilder()
+                        .setMetaData(errorMeta)
+                        .build();
+                responseObserver.onNext(errorResponse);
+                responseObserver.onCompleted();
+            }
         }
 
         @Override
-        public void getListPostByUserID(GetPostByUserIdRequest request,
-                        StreamObserver<ListPostResponse> responseObserver) {
-                try {
-                        List<Post> listPost = postService.getPostByUserID(UUID.fromString(request.getUserId()));
-                        List<CreatePostResponse> postResponse = mapPostsToResponses(listPost);
-                        responseObserver.onNext(buildSuccessResponse(postResponse));
-                } catch (Exception e) {
-                        responseObserver.onNext(buildErrorResponse(e));
-                } finally {
-                        responseObserver.onCompleted();
-                }
+        public void getListPostByUserID(GetPostByUserIdRequest request, StreamObserver<ListPostResponse> responseObserver) {
+            try {
+                List<Post> listPost = postService.getPostByUserID(UUID.fromString(request.getUserId()),request.getLimit(),request.getPage());
+                List<CreatePostResponse> postResponse = mapPostsToResponses(listPost);
+                responseObserver.onNext(buildSuccessResponse(postResponse));
+            } catch (Exception e) {
+                responseObserver.onNext(buildErrorResponses(e));
+            } finally {
+                responseObserver.onCompleted();
+            }
         }
 
         @Override
         public void getListPostOnOtherUser(GetListPostOnOtherUserReq request,
-                        StreamObserver<ListPostResponse> responseObserver) {
-                try {
-                        List<Post> listPost = postService.getPostOnWallOfOtherUser(
-                                        UUID.fromString(request.getUserId()),
-                                        UUID.fromString(request.getFriendId()));
-                        List<CreatePostResponse> postResponse = mapPostsToResponses(listPost);
-                        responseObserver.onNext(buildSuccessResponse(postResponse));
-                } catch (Exception e) {
-                        responseObserver.onNext(buildErrorResponse(e));
-                } finally {
-                        responseObserver.onCompleted();
-                }
+                StreamObserver<ListPostResponse> responseObserver) {
+            try {
+                List<Post> listPost = postService.getPostOnWallOfOtherUser(
+                        UUID.fromString(request.getUserId()),
+                        UUID.fromString(request.getFriendId()),request.getLimit(),request.getPage());
+                List<CreatePostResponse> postResponse = mapPostsToResponses(listPost);
+                responseObserver.onNext(buildSuccessResponse(postResponse));
+            } catch (Exception e) {
+                responseObserver.onNext(buildErrorResponses(e));
+            } finally {
+                responseObserver.onCompleted();
+            }
         }
 
         @Override
         public void getListPostOnDashBoard(GetPostOnDashBoardReq request,
-                        StreamObserver<ListPostResponse> responseObserver) {
-                try {
-                        List<Post> listPost = postService.getPostOnDashBoard(
-                                        UUID.fromString(request.getUserId()),
-                                        request.getLimit(), request.getPage());
-                        List<CreatePostResponse> postResponse = mapPostsToResponses(listPost);
-                        responseObserver.onNext(buildSuccessResponse(postResponse));
-                } catch (Exception e) {
-                        responseObserver.onNext(buildErrorResponse(e));
-                } finally {
-                        responseObserver.onCompleted();
-                }
+                StreamObserver<ListPostResponse> responseObserver) {
+            try {
+                List<Post> listPost = postService.getPostOnDashBoard(
+                        UUID.fromString(request.getUserId()),
+                        request.getLimit(), request.getPage());
+                List<CreatePostResponse> postResponse = mapPostsToResponses(listPost);
+                responseObserver.onNext(buildSuccessResponse(postResponse));
+            } catch (Exception e) {
+                responseObserver.onNext(buildErrorResponses(e));
+            } finally {
+                responseObserver.onCompleted();
+            }
+        }
+        @Override
+        public void getPostDetail(GetPostDetailRequest request, StreamObserver<CreatePostResponse> responseObserver) {
+            try{
+                Post post=postService.getPostById(UUID.fromString(request.getPostId()));
+                CreatePostResponse response=mapPostToResponses(post);
+                responseObserver.onNext(response);
+                responseObserver.onCompleted();
+            } catch (Exception e) {
+            responseObserver.onNext(buildErrorResponse(e));
+        } finally {
+            responseObserver.onCompleted();
+        }
         }
 
         private List<CreatePostResponse> mapPostsToResponses(List<Post> listPost) {
-                List<CreatePostResponse> postResponse = new ArrayList<>();
-                for (Post post : listPost) {
-                        CreatePostResponse response = CreatePostResponse.newBuilder()
-                                        .setAuthorId(post.getAuthorId() != null ? post.getAuthorId().toString() : "")
-                                        .setContent(post.getContent() != null ? post.getContent() : "")
-                                        .addAllTaggedUserIds(post.getUserTags() != null ? post.getUserTags().stream()
-                                                        .map(tag -> tag.getId().toString())
-                                                        .collect(Collectors.toList())
-                                                        : Collections.emptyList())
-                                        .addAllHashtags(
-                                                        post.getHashtags() != null ? post.getHashtags().getContent()
-                                                                        : Collections.emptyList())
-                                        .addAllLinks(
-                                                        post.getPostLinks() != null ? post.getPostLinks().getContent()
-                                                                        : Collections.emptyList())
-                                        .addAllImages(post.getImages() != null ? post.getImages()
-                                                        : Collections.emptyList())
-                                        .setPostParentId(post.getPostParentId() != null
-                                                        ? post.getPostParentId().toString()
-                                                        : "")
-                                        .setPostId(post.getId() != null ? post.getId().toString() : "")
-                                        .setPostType(post.getPostType() != null ? post.getPostType().toString() : "")
-                                        .build();
+            List<CreatePostResponse> postResponse = new ArrayList<>();
 
-                        postResponse.add(response);
-                }
-                return postResponse;
+            for (Post post : listPost) {
+                List<Comment> comments = commentService.get10Comment(post.getId());
+                CreatePostResponse response = CreatePostResponse.newBuilder()
+                        .setAuthorId(post.getAuthorId() != null ? post.getAuthorId().toString() : "")
+                        .setContent(post.getContent() != null ? post.getContent() : "")
+                        .addAllTaggedUserIds(post.getUserTags() != null ? post.getUserTags().stream()
+                                .map(tag -> tag.getId().toString())
+                                .collect(Collectors.toList())
+                                : Collections.emptyList())
+                        .addAllHashtags(
+                                post.getHashtags() != null ? post.getHashtags().getContent() : Collections.emptyList())
+                        .addAllLinks(
+                                post.getPostLinks() != null ? post.getPostLinks().getContent() : Collections.emptyList())
+                        .addAllImages(post.getImages() != null ? post.getImages() : Collections.emptyList())
+                        .setPostParentId(post.getPostParentId() != null ? post.getPostParentId().toString() : "")
+                        .setPostId(post.getId() != null ? post.getId().toString() : "")
+                        .setPostType(post.getPostType() != null ? post.getPostType().toString() : "")
+                        .addAllComment(comments != null ? mapCommentResponse(comments) : Collections.emptyList())
+                        .setCreatedAt(post.getCreatedDate() != null ? post.getCreatedDate().toString() : "")
+                        .build();
+
+                postResponse.add(response);
+            }
+            return postResponse;
         }
-
+        private CreatePostResponse mapPostToResponses(Post post) {
+                List<Comment> comments = commentService.getAllCommentByPostId(post.getId());
+                CreatePostResponse response = CreatePostResponse.newBuilder()
+                        .setAuthorId(post.getAuthorId() != null ? post.getAuthorId().toString() : "")
+                        .setContent(post.getContent() != null ? post.getContent() : "")
+                        .addAllTaggedUserIds(post.getUserTags() != null ? post.getUserTags().stream()
+                                .map(tag -> tag.getId().toString())
+                                .collect(Collectors.toList())
+                                : Collections.emptyList())
+                        .addAllHashtags(
+                                post.getHashtags() != null ? post.getHashtags().getContent() : Collections.emptyList())
+                        .addAllLinks(
+                                post.getPostLinks() != null ? post.getPostLinks().getContent() : Collections.emptyList())
+                        .addAllImages(post.getImages() != null ? post.getImages() : Collections.emptyList())
+                        .setPostParentId(post.getPostParentId() != null ? post.getPostParentId().toString() : "")
+                        .setPostId(post.getId() != null ? post.getId().toString() : "")
+                        .setPostType(post.getPostType() != null ? post.getPostType().toString() : "")
+                        .addAllComment(comments != null ? mapCommentResponse(comments) : Collections.emptyList())
+                        .build();
+            return response;
+        }
         private ListPostResponse buildSuccessResponse(List<CreatePostResponse> postResponse) {
-                return ListPostResponse.newBuilder()
-                                .addAllPostResponse(postResponse)
-                                .setMetadata(MetaData.newBuilder()
-                                                .setRespcode("200")
-                                                .setMessage("Posts retrieved successfully")
-                                                .build())
-                                .build();
+            return ListPostResponse.newBuilder()
+                    .addAllPostResponse(postResponse)
+                    .setMetadata(MetaData.newBuilder()
+                            .setRespcode("200")
+                            .setMessage("Posts retrieved successfully")
+                            .build())
+                    .build();
         }
 
-        private ListPostResponse buildErrorResponse(Exception e) {
-                return ListPostResponse.newBuilder()
-                                .setMetadata(MetaData.newBuilder()
-                                                .setRespcode("500")
-                                                .setMessage("Failed to get posts: " + e.getMessage())
-                                                .build())
-                                .build();
+        private ListPostResponse buildErrorResponses(Exception e) {
+            return ListPostResponse.newBuilder()
+                    .setMetadata(MetaData.newBuilder()
+                            .setRespcode("500")
+                            .setMessage("Failed to get posts: " + e.getMessage())
+                            .build())
+                    .build();
+        }
+        private CreatePostResponse buildErrorResponse(Exception e) {
+            return CreatePostResponse.newBuilder()
+                    .setMetaData(MetaData.newBuilder()
+                            .setRespcode("500")
+                            .setMessage("Failed to get posts: " + e.getMessage())
+                            .build())
+                    .build();
+        }
+        private List<CreateCommentResponse> mapCommentResponse(List<Comment> comments){
+            List<CreateCommentResponse> commentResponses = new ArrayList<>();
+            for(Comment comment : comments){
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String dateString = formatter.format(comment.getCreatedDate());
+            CreateCommentResponse response = CreateCommentResponse.newBuilder()
+                    .setAuthorId(comment.getAuthorId() != null ? comment.getAuthorId().toString() : "")
+                    .setContent(comment.getContent() != null ? comment.getContent() : "")
+                    .addAllTaggedUserIds(comment.getUserTags() != null ? comment.getUserTags().stream()
+                            .map(tag -> tag.getId().toString())
+                            .collect(Collectors.toList())
+                            : Collections.emptyList())
+                    .addAllHashtags(comment.getHashtags() != null ? comment.getHashtags().getContent() : Collections.emptyList())
+                    .addAllLinks(comment.getCommentLinks() != null ? comment.getCommentLinks().getContent() : Collections.emptyList())
+                    .addAllImages(comment.getImages() != null ? comment.getImages() : Collections.emptyList())
+                    .setCommentParentId(comment.getCommentParentId() != null ? comment.getCommentParentId().toString() : ""
+                    )
+                    .setCreateAt(dateString)
+                    .build();
+                commentResponses.add(response);
+            }
+            return commentResponses;
         }
 
         @Override
@@ -281,77 +351,85 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
 
         // comment
         @Override
-        public void createComment(CreateCommentRequest request,
-                        io.grpc.stub.StreamObserver<CreateCommentResponse> responseObserver) {
-                try {
-                        Comment comment = commentService.createComment(request);
-                        MetaData metaData = MetaData.newBuilder()
-                                        .setRespcode("200")
-                                        .setMessage("Comment created successfully")
-                                        .build();
-                        CreateCommentResponse response = CreateCommentResponse.newBuilder()
-                                        .setAuthorId(request.getAuthorId() != null ? request.getAuthorId() : "")
-                                        .setContent(request.getContent() != null ? request.getContent() : "")
-                                        .addAllTaggedUserIds(request.getTaggedUserIdsList())
-                                        .addAllHashtags(request.getHashtagsList())
-                                        .addAllLinks(request.getLinksList())
-                                        .addAllImages(request.getImagesList())
-                                        .setCommentParentId(request.getCommentParentId())
-                                        .setMetaData(metaData)
-                                        .build();
+    public void createComment(CreateCommentRequest request,
+            io.grpc.stub.StreamObserver<CreateCommentResponse> responseObserver) {
+        try {
+            Comment comment = commentService.createComment(request);
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String dateString = formatter.format(comment.getCreatedDate());
+            MetaData metaData = MetaData.newBuilder()
+                    .setRespcode("200")
+                    .setMessage("Comment created successfully")
+                    .build();
+            CreateCommentResponse response = CreateCommentResponse.newBuilder()
+                    .setAuthorId(request.getAuthorId() != null ? request.getAuthorId() : "")
+                    .setCommentId(comment.getId() != null ? comment.getId().toString() : "")
+                    .setContent(request.getContent() != null ? request.getContent() : "")
+                    .addAllTaggedUserIds(request.getTaggedUserIdsList())
+                    .addAllHashtags(comment.getHashtags() != null ? comment.getHashtags().getContent() : Collections.emptyList())
+                    .addAllLinks(comment.getCommentLinks() != null ? comment.getCommentLinks().getContent() : Collections.emptyList())
+                    .addAllImages(request.getImagesList())
+                    .setCommentParentId(request.getCommentParentId())
+                    .setPostId(request.getPostId())
+                    .setCreateAt(dateString)
+                    .setMetaData(metaData)
+                    .build();
 
-                        responseObserver.onNext(response);
-                        responseObserver.onCompleted();
-                } catch (Exception e) {
-                        MetaData errorMeta = MetaData.newBuilder()
-                                        .setRespcode("500")
-                                        .setMessage("Failed to create comment: " + e.getMessage())
-                                        .build();
-                        CreateCommentResponse errorResponse = CreateCommentResponse.newBuilder()
-                                        .setMetaData(errorMeta)
-                                        .build();
-                        responseObserver.onNext(errorResponse);
-                        responseObserver.onCompleted();
-                }
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            MetaData errorMeta = MetaData.newBuilder()
+                    .setRespcode("500")
+                    .setMessage("Failed to create comment: " + e.getMessage())
+                    .build();
+            CreateCommentResponse errorResponse = CreateCommentResponse.newBuilder()
+                    .setMetaData(errorMeta)
+                    .build();
+            responseObserver.onNext(errorResponse);
+            responseObserver.onCompleted();
         }
+    }
 
-        @Override
-        public void updateComment(UpdateCommentRequest request,
-                        io.grpc.stub.StreamObserver<CreateCommentResponse> responseObserver) {
-                try {
-                        Comment comment = commentService.updateComment(request);
-                        String commentIdStr = comment.getId() != null ? comment.getId().toString() : "";
-                        MetaData metaData = MetaData.newBuilder()
-                                        .setRespcode("200")
-                                        .setMessage("Comment created successfully")
-                                        .build();
-                        CreateCommentResponse response = CreateCommentResponse.newBuilder()
-                                        .setCommentId(commentIdStr)
-                                        .setAuthorId(request.getAuthorId() != null ? request.getAuthorId() : "")
-                                        .setContent(request.getContent() != null ? request.getContent() : "")
-                                        .addAllTaggedUserIds(request.getTaggedUserIdsList())
-                                        .addAllHashtags(request.getHashtagsList())
-                                        .addAllLinks(request.getLinksList())
-                                        .addAllImages(request.getImagesList())
-                                        .setCommentParentId(request.getCommentParentId())
-                                        .setMetaData(metaData)
-                                        .build();
+    @Override
+    public void updateComment(UpdateCommentRequest request,
+            io.grpc.stub.StreamObserver<CreateCommentResponse> responseObserver) {
+        try {
+            Comment comment = commentService.updateComment(request);
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String dateString = formatter.format(comment.getLastModifiedDate());
+            String commentIdStr = comment.getId() != null ? comment.getId().toString() : "";
+            MetaData metaData = MetaData.newBuilder()
+                    .setRespcode("200")
+                    .setMessage("Comment created successfully")
+                    .build();
+            CreateCommentResponse response = CreateCommentResponse.newBuilder()
+                    .setCommentId(commentIdStr)
+                    .setAuthorId(request.getAuthorId() != null ? request.getAuthorId() : "")
+                    .setContent(request.getContent() != null ? request.getContent() : "")
+                    .addAllTaggedUserIds(request.getTaggedUserIdsList())
+                    .addAllHashtags(comment.getHashtags() != null ? comment.getHashtags().getContent() : Collections.emptyList())
+                    .addAllLinks(comment.getCommentLinks() != null ? comment.getCommentLinks().getContent() : Collections.emptyList())
+                    .addAllImages(request.getImagesList())
+                    .setCommentParentId(request.getCommentParentId())
+                    .setCreateAt(dateString)
+                    .setPostId(request.getPostId())
+                    .setMetaData(metaData)
+                    .build();
 
-                        responseObserver.onNext(response);
-                        responseObserver.onCompleted();
-                } catch (Exception e) {
-                        MetaData errorMeta = MetaData.newBuilder()
-                                        .setRespcode("500")
-                                        .setMessage("Failed to create comment: " + e.getMessage())
-                                        .build();
-                        CreateCommentResponse errorResponse = CreateCommentResponse.newBuilder()
-                                        .setMetaData(errorMeta)
-                                        .build();
-                        responseObserver.onNext(errorResponse);
-                        responseObserver.onCompleted();
-                }
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            MetaData errorMeta = MetaData.newBuilder()
+                    .setRespcode("500")
+                    .setMessage("Failed to create comment: " + e.getMessage())
+                    .build();
+            CreateCommentResponse errorResponse = CreateCommentResponse.newBuilder()
+                    .setMetaData(errorMeta)
+                    .build();
+            responseObserver.onNext(errorResponse);
+            responseObserver.onCompleted();
         }
-
+    }
         @Override
         public void getListComment(GetListCommentRequest request,
                         StreamObserver<ListCommentResponse> responseObserver) {

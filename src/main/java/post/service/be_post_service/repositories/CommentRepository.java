@@ -7,6 +7,7 @@ import post.service.be_post_service.base.BaseRepository;
 import post.service.be_post_service.entity.Comment;
 import post.service.be_post_service.entity.Post;
 
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,5 +26,6 @@ public interface CommentRepository extends BaseRepository<Comment, UUID> {
     List<Comment> getByPostId(
             @Param("postId") final UUID postId
     );
-
+    @Query("SELECT c FROM Comment c WHERE c.postId = :postId ORDER BY c.createdDate DESC")
+    List<Comment> getNumberOfComment(@Param("postId") UUID postId, Pageable pageable);
 }
