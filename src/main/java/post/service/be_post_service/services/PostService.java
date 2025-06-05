@@ -207,6 +207,10 @@ public class PostService {
         if (post == null) {
             throw new IllegalArgumentException("Post not found: ");
         }
+        boolean isValidReactionType = isValidReactionType(request.getReactionType());
+        if (!isValidReactionType) {
+            throw new IllegalArgumentException("Invalid reaction type: " + request.getReactionType());
+        }
         List<UUID> listReaction = post.getLikedUserIds();
         int likeCount = post.getLikeCount();
         if (listReaction.contains(UUID.fromString(request.getUserId()))) {
@@ -224,7 +228,14 @@ public class PostService {
         postReaction.setReactionType(ReactionType.valueOf(request.getReactionType()));
         postReactionDomain.create(postReaction);
     }
-
+    private boolean isValidReactionType(String input) {
+        try {
+            ReactionType.valueOf(input.toUpperCase());
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
     private void validateRequest(String content, String authorId) {
         if (content == null || content.isBlank()) {
             throw new IllegalArgumentException("Post content is required");

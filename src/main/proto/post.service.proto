@@ -118,19 +118,17 @@ message MetaData{
 message CreateCommentRequest {
     string author_id=1;
     string content =2;
-    repeated string taggedUserIds = 3;
-    repeated string images = 4;
-    string commentParentId=5;
-    string postId=6;
+    repeated string images = 3;
+    string commentParentId=4;
+    string postId=5;
 }
 message UpdateCommentRequest {
     string author_id=1;
     string content =2;
-    repeated string taggedUserIds = 3;
-    repeated string images = 4;
-    string commentParentId=5;
-    string postId=6;
-    string commentId=7;
+    repeated string images = 3;
+    string commentParentId=4;
+    string postId=5;
+    string commentId=6;
 }
 message CreateCommentResponse{
     string author_id=1;
@@ -143,7 +141,8 @@ message CreateCommentResponse{
     string postId=8;
     string commentId=9;
     string createAt=10;
-    MetaData metaData=11;
+    repeated string mention =11;
+    MetaData metaData=12;
 }
 message GetListCommentRequest{
     string postId=1;
