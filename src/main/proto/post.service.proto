@@ -24,6 +24,12 @@ service PostService {
     //story
     rpc CreateStory(CreateStoryRequest) returns (CreateStoryResponse);
     rpc GetListStory(GetListStoryRequest) returns (GetListStoryResponse);
+    rpc CreateCommentStory(CreateCommentStoryRequest) returns (CreateCommentStoryResponse);
+    rpc CreateStoryReaction(CreateStoryReactionRequest) returns (MetaData);
+    rpc GetListStoryReaction(GetListStoryReactionRequest) returns (GetListStoryReactionResponse);
+    rpc UpdateStory(UpdateStoryRequest) returns (MetaData);
+    rpc DeleteStory(DeleteStoryRequest) returns (MetaData);
+
 }
 
 message GetListPostRequest {
@@ -183,4 +189,50 @@ message GetListStoryRequest{
 message GetListStoryResponse{
     repeated Story story = 1;
     MetaData metaData = 2;
+}
+message CreateCommentStoryRequest {
+    string storyId = 1;
+    string author_id = 2;
+    string content = 3;
+}
+message CreateCommentStoryResponse {
+    string storyId = 1;
+    string author_id = 2;
+    string content = 3;
+    MetaData metaData = 4;
+}
+message CreateStoryReactionRequest {
+    string storyId = 1;
+    string userId = 2;
+    string reactionType = 3;
+}
+
+message CreateStoryReactionResponse {
+    MetaData metaData = 1;
+}
+
+message GetListStoryReactionRequest {
+    string userId = 1;
+    string storyId = 2;
+}
+
+message GetListStoryReactionResponse {
+    repeated ReactionStory reactionStories = 1;
+    MetaData metaData = 2;
+}
+
+message ReactionStory {
+    string userId = 1;
+    string storyId = 2;
+    string reactionType = 3;
+}
+
+message UpdateStoryRequest {
+    string storyId = 1;
+    string author_Id = 2;
+    string viewType = 3;
+}
+message DeleteStoryRequest {
+    string storyId = 1;
+    string author_Id = 2;
 }

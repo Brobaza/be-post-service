@@ -40,4 +40,5 @@ public class StoryDomain extends BaseDomain<Story, UUID> {
     public List<Story> getAllActiveStories(Date threshold) {
         return storyRepository.getAllActiveStories(threshold);
     }
+    
 }

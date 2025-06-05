@@ -21,14 +21,21 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import net.devh.boot.grpc.server.service.GrpcService;
 import post.service.be_post_service.dtos.TestDto;
 import post.service.be_post_service.entity.Comment;
+import post.service.be_post_service.entity.CommentStory;
 import post.service.be_post_service.entity.Post;
 import post.service.be_post_service.entity.Story;
+import post.service.be_post_service.entity.StoryReaction;
 import post.service.be_post_service.grpc.*;
 import post.service.be_post_service.queue.ProducerService;
 import post.service.be_post_service.services.CommentService;
 import post.service.be_post_service.services.PostService;
 import post.service.be_post_service.services.StoryService;
 import userProtoService.UserServiceOuterClass.GetUserResponse;
+import post.service.be_post_service.grpc.GetListStoryReactionRequest;
+import post.service.be_post_service.grpc.GetListStoryReactionResponse;
+import post.service.be_post_service.grpc.CreateStoryReactionResponse;
+
+import post.service.be_post_service.dtos.CreateStoryReactionDto;
 
 @GrpcService
 public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
@@ -486,4 +493,153 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
                         responseObserver.onCompleted();
                 }
         }
- }
+
+        @Override
+        public void deleteStory(DeleteStoryRequest request, StreamObserver<MetaData> responseObserver) {
+                try {
+                        MetaData metaData = storyService.deleteStory(request);
+                        responseObserver.onNext(metaData);
+                        responseObserver.onCompleted();
+                } catch (Exception e) {
+                        MetaData errorMeta = MetaData.newBuilder()
+                                        .setRespcode("500")
+                                        .setMessage("Failed to delete story: " + e.getMessage())
+                                        .build();
+                        responseObserver.onNext(errorMeta);
+                        responseObserver.onCompleted();
+                }
+        }
+
+        @Override
+        public void createStoryReaction(
+                        post.service.be_post_service.grpc.CreateStoryReactionRequest request,
+                        io.grpc.stub.StreamObserver<post.service.be_post_service.grpc.MetaData> responseObserver) {
+
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.configure(SerializationFeature.FAIL_ON_SELF_REFERENCES, false);
+                mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+                CreateStoryReactionDto createStoryReactionDto = new CreateStoryReactionDto(request);
+                try {
+                        String parsedvalue = mapper.writeValueAsString(createStoryReactionDto);
+                        System.out.println("Create successfully reaction story: " + parsedvalue);
+                        this.producerService.sendMessage(parsedvalue, "create-story-reaction");
+                } catch (JsonProcessingException e) {
+                        logger.severe("Error processing JSON: " + e.getMessage());
+                }
+                try {
+                        storyService.createStoryReaction(request);                      
+                        post.service.be_post_service.grpc.MetaData metaData = post.service.be_post_service.grpc.MetaData
+                                        .newBuilder()
+                                        .setRespcode("200")
+                                        .setMessage("Story reaction created successfully")
+                                        .build();
+                        responseObserver.onNext(metaData);
+                        responseObserver.onCompleted();
+                } catch (Exception e) {
+                        post.service.be_post_service.grpc.MetaData errorMeta = post.service.be_post_service.grpc.MetaData
+                                        .newBuilder()
+                                        .setRespcode("500")
+                                        .setMessage("Failed to create story reaction: " + e.getMessage())
+                                        .build();
+                        responseObserver.onNext(errorMeta);
+                        responseObserver.onCompleted();
+                }
+        }
+
+        @Override
+        public void getListStoryReaction(
+                        post.service.be_post_service.grpc.GetListStoryReactionRequest request,
+                        StreamObserver<post.service.be_post_service.grpc.GetListStoryReactionResponse> responseObserver) {
+                try {
+                        List<StoryReaction> storyReactions = storyService
+                                        .getListStoryReaction(request);
+
+                        List<ReactionStory> reactionResponses = new ArrayList<>();
+
+                        for (post.service.be_post_service.entity.StoryReaction reaction : storyReactions) {
+                                post.service.be_post_service.grpc.ReactionStory response = post.service.be_post_service.grpc.ReactionStory
+                                                .newBuilder()
+
+                                                .setUserId(reaction.getUserId() != null
+                                                                ? reaction.getUserId().toString()
+                                                                : "")
+                                                .setStoryId(reaction.getStoryId() != null
+                                                                ? reaction.getStoryId().toString()
+                                                                : "")
+                                                .setReactionType(reaction.getReactionType() != null
+                                                                ? reaction.getReactionType().name()
+                                                                : "")
+                                                .build();
+                                reactionResponses.add(response);
+                        }
+
+                        post.service.be_post_service.grpc.GetListStoryReactionResponse finalResponse = post.service.be_post_service.grpc.GetListStoryReactionResponse
+                                        .newBuilder()
+                                        .addAllReactionStories(reactionResponses)
+
+                                        .setMetaData(post.service.be_post_service.grpc.MetaData.newBuilder()
+                                                        .setRespcode("200")
+                                                        .setMessage("Story reactions retrieved successfully")
+                                                        .build())
+                                        .build();
+
+                        responseObserver.onNext(finalResponse);
+                        responseObserver.onCompleted();
+                } catch (Exception e) {
+                        post.service.be_post_service.grpc.GetListStoryReactionResponse errorResponse = post.service.be_post_service.grpc.GetListStoryReactionResponse
+                                        .newBuilder()
+                                        .setMetaData(post.service.be_post_service.grpc.MetaData.newBuilder()
+                                                        .setRespcode("500")
+                                                        .setMessage("Failed to get story reactions: " + e.getMessage())
+                                                        .build())
+                                        .build();
+                        responseObserver.onNext(errorResponse);
+                        responseObserver.onCompleted();
+                }
+        }
+
+        @Override
+        public void createCommentStory(CreateCommentStoryRequest request,
+                        io.grpc.stub.StreamObserver<CreateCommentStoryResponse> responseObserver) {
+                try {
+
+                        CreateCommentStoryResponse response = storyService.createCommentStory(request);
+
+                        responseObserver.onNext(response);
+                        responseObserver.onCompleted();
+                } catch (Exception e) {
+                        CreateCommentStoryResponse errorResponse = CreateCommentStoryResponse.newBuilder()
+                                        .setMetaData(MetaData.newBuilder()
+                                                        .setRespcode("500")
+                                                        .setMessage("Failed to create comment on story: "
+                                                                        + e.getMessage())
+                                                        .build())
+                                        .build();
+                        responseObserver.onNext(errorResponse);
+                        responseObserver.onCompleted();
+                }
+        }
+
+        @Override
+        public void updateStory(UpdateStoryRequest request,
+                        io.grpc.stub.StreamObserver<MetaData> responseObserver) {
+                try {
+                        Story story = storyService.updateStory(request.getStoryId(), request.getAuthorId(),
+                                        request.getViewType());
+                        MetaData metaData = MetaData.newBuilder()
+                                        .setRespcode("200")
+                                        .setMessage("Story updated successfully")
+                                        .build();
+
+                        responseObserver.onNext(metaData);
+                        responseObserver.onCompleted();
+                } catch (Exception e) {
+                        MetaData errorMeta = MetaData.newBuilder()
+                                        .setRespcode("500")
+                                        .setMessage("Failed to update story: " + e.getMessage())
+                                        .build();
+                        responseObserver.onNext(errorMeta);
+                        responseObserver.onCompleted();
+                }
+        }
+}

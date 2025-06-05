@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import post.service.be_post_service.dtos.CreateStoryReactionDto;
 import post.service.be_post_service.dtos.TestDto;
 
 @Service
@@ -27,4 +28,22 @@ public class KafkaConsumerService {
             e.printStackTrace();
         }
     }
+    @KafkaListener(topics = "create-story-reaction", groupId = "#{'${spring.kafka.consumer.group-id}'}")
+    public void listenCreateStoryReaction(String message) {
+        System.out.println("Received message: " + message);
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try {
+            CreateStoryReactionDto createStoryReactionDto = objectMapper.readValue(message, CreateStoryReactionDto.class);
+            System.out.println("CreateStoryReactionDto: " + createStoryReactionDto);
+            System.out.println("User ID: " + createStoryReactionDto.getUserId());
+            System.out.println("Story ID: " + createStoryReactionDto.getStoryId());
+            System.out.println("Reaction Type: " + createStoryReactionDto.getReactionType());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+}
+    }
+
+    
 }

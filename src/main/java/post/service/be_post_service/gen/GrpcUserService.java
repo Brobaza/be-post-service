@@ -49,8 +49,8 @@ public class GrpcUserService {
                 .setUserId(userId)
                 .setFriendId(friendId)
                 .build();
-        MetaData metaData = MetaData.newBuilder()
-                .setRespcode("200")
+        UserServiceOuterClass.Metadata metaData = UserServiceOuterClass.Metadata.newBuilder()
+                .setCode("200")
                 .setMessage("This is friend")
                 .build();
         try {
@@ -58,8 +58,8 @@ public class GrpcUserService {
                     .setMetadata(metaData)
                     .build();
         } catch (Exception e) {
-            MetaData errorMetaData = MetaData.newBuilder()
-                    .setRespcode("500")
+            UserServiceOuterClass.Metadata errorMetaData = UserServiceOuterClass.Metadata.newBuilder()
+                    .setCode("500")
                     .setMessage(e.getMessage())
                     .build();
             UserServiceOuterClass.isOnFriendListRes errorResponse = UserServiceOuterClass.isOnFriendListRes.newBuilder()

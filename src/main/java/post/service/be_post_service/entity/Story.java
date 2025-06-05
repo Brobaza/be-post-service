@@ -18,6 +18,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import post.service.be_post_service.base.BaseEntity;
+import post.service.be_post_service.enums.ReactionType;
 import post.service.be_post_service.enums.StoryType;
 import post.service.be_post_service.enums.ViewType;
 
@@ -53,11 +54,16 @@ public class Story extends BaseEntity<UUID> {
     private StoryType storyType;
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "viewed_user_ids", columnDefinition = "uuid[]")
-    private List<UUID> viewedUserIds = new ArrayList<>();
+    private List<UUID> viewedUserIds ;
 
     @Column(name = "video_url")
     private String videoUrl;
     @Enumerated(EnumType.STRING)
     @Column(name = "view_type")
     private ViewType viewType;
+   @Transient
+   private List<StoryReaction> storyReactions ; 
+   @Transient
+    private List<CommentStory> commentStories; 
+   
 }
