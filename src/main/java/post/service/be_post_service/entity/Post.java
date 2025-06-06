@@ -44,7 +44,8 @@ public class Post extends BaseEntity<UUID> {
     private int likeCount;
     @Column(name = "share_count")
     private int shareCount;
-
+    @Column(name="commentCount")
+    private int commentCount;
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(name = "liked_user_ids", columnDefinition = "uuid[]")
     @Builder.Default

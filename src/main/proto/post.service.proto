@@ -79,8 +79,12 @@ message CreatePostResponse{
     string postId=8;
     string postType=9;
     string createdAt=10;
-    repeated CreateCommentResponse comment=11;
-    MetaData metaData=12;
+    repeated CreateCommentResponse comment =11;
+    int32 sharedCount=12;
+    int32 likedCount=13;
+    int32 commandCount=14;
+    repeated string listUserLikedIds=15;
+    MetaData metaData=16;
 }
 message GetPostDetailRequest{
     string postId=1;

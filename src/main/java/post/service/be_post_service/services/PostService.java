@@ -59,6 +59,13 @@ public class PostService {
             if (parentPost == null) {
                 throw new IllegalArgumentException("Parent post not found: " + parentId);
             }
+            List<UUID> listUserIdShared = parentPost.getSharedUserIds() != null
+                    ? new ArrayList<>(parentPost.getSharedUserIds())
+                    : new ArrayList<>();
+            listUserIdShared.add(UUID.fromString(request.getAuthorId()));
+            parentPost.setSharedUserIds(listUserIdShared);
+            parentPost.setShareCount(listUserIdShared.size());
+            postDomain.saveOrUpdate(parentPost);
             post.setPostParentId(parentId);
         }
 
