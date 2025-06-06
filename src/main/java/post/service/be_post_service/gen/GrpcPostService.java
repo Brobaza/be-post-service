@@ -21,8 +21,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import net.devh.boot.grpc.server.service.GrpcService;
+import post.service.be_post_service.dtos.CreateCommentReactionRequestDto;
+import post.service.be_post_service.dtos.CreateCommentRequestDto;
+import post.service.be_post_service.dtos.CreatePostReactionRequestDto;
 import post.service.be_post_service.dtos.TestDto;
 import post.service.be_post_service.entity.Comment;
+import post.service.be_post_service.entity.CommentUserTag;
 import post.service.be_post_service.entity.Post;
 import post.service.be_post_service.entity.Story;
 import post.service.be_post_service.grpc.*;
@@ -53,7 +57,14 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
 
         @Autowired
         private PostService postService;
-
+        @Value("${spring.kafka.create-comment}")
+        private String createCommentTopic;
+        @Value("${spring.kafka.reaction-post}")
+        private String reactionPostTopic;
+        @Value("${spring.kafka.reaction-comment}")
+        private String reactionCommentTopic;
+        @Value("${spring.kafka.mention-comment}")
+        private String mentionCommentTopic;
         @Override
         public void testPost(TestPostRequest request, io.grpc.stub.StreamObserver<TestPostResponse> responseObserver) {
                 TestPostResponse response = TestPostResponse.newBuilder()
@@ -335,6 +346,16 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
         private List<CreateCommentResponse> mapCommentResponse(List<Comment> comments){
             List<CreateCommentResponse> commentResponses = new ArrayList<>();
             for(Comment comment : comments){
+                List<CommentUserTag> commentUserTags = comment.getUserTags();
+                List<String> mentions=new ArrayList<>();
+                if(commentUserTags != null && commentUserTags.size() > 0){
+                    for (CommentUserTag user: commentUserTags){
+                        String userName=grpcUserService.getUser(user.getUser_id().toString()).getName();
+                        String metion="id: "+comment.getId()+" name:"+userName+" userId:"+user.getUser_id()+
+                                " startIndex:"+user.getStart_index()+" endIndex:"+user.getEnd_index();
+                        mentions.add(metion);
+                    }
+                }
                 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 String dateString = formatter.format(comment.getCreatedDate());
             CreateCommentResponse response = CreateCommentResponse.newBuilder()
@@ -350,6 +371,7 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
                     .setCommentParentId(comment.getCommentParentId() != null ? comment.getCommentParentId().toString() : ""
                     )
                     .setCreateAt(dateString)
+                    .addAllMention(mentions)
                     .build();
                 commentResponses.add(response);
             }
@@ -360,7 +382,21 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
         public void createReactionPost(CreatePostReactionRequest request,
                         io.grpc.stub.StreamObserver<MetaData> responseObserver) {
                 try {
-                        postService.CreatePostReaction(request);
+                    postService.CreatePostReaction(request);
+                    String userName=grpcUserService.getUser(request.getUserId()).getName();
+                    ObjectMapper mapper = new ObjectMapper();
+                    mapper.configure(SerializationFeature.FAIL_ON_SELF_REFERENCES, false);
+                    mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+
+                    try {
+                        CreatePostReactionRequestDto reactionPost = new CreatePostReactionRequestDto(request,userName);
+                        String parsedValue = mapper.writeValueAsString(reactionPost);
+                        System.out.println("Create successfully reaction post: " + parsedValue);
+                        this.producerService.sendMessage(parsedValue, reactionPostTopic);
+
+                    } catch (JsonProcessingException e) {
+                        logger.severe("Error processing JSON: " + e.getMessage());
+                    }
                         MetaData metaData = MetaData.newBuilder()
                                         .setRespcode("200")
                                         .setMessage("Reaction created successfully")
@@ -382,7 +418,38 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
     public void createComment(CreateCommentRequest request,
             io.grpc.stub.StreamObserver<CreateCommentResponse> responseObserver) {
         try {
-            Comment comment = commentService.createComment(request);
+            Comment comment= commentService.createComment(request);
+            String userName=grpcUserService.getUser(request.getAuthorId()).getName();
+            List<String> userTag = comment.getUserTags() != null
+                    ? comment.getUserTags().stream()
+                    .map(tag -> tag.getId().toString())
+                    .collect(Collectors.toList())
+                    : Collections.emptyList();
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(SerializationFeature.FAIL_ON_SELF_REFERENCES, false);
+            mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+            if(userTag.size() > 0){
+                for (String tagId : userTag) {
+                    try {
+                        String message=comment.getAuthorId()+" đã nhắc tới bạn trong một bình luận:"+comment.getContent() +" "+tagId;
+                        String parsedValue = mapper.writeValueAsString(message);
+                        System.out.println("Comment created successfully: " + parsedValue);
+                        this.producerService.sendMessage(parsedValue, mentionCommentTopic);
+
+                    } catch (JsonProcessingException e) {
+                        logger.severe("Error processing JSON: " + e.getMessage());
+                    }
+                }
+            }
+            try {
+                CreateCommentRequestDto create_comment = new CreateCommentRequestDto(request,userName);
+                String parsedValue = mapper.writeValueAsString(create_comment);
+                System.out.println("Comment created successfully: " + parsedValue);
+                this.producerService.sendMessage(parsedValue, createCommentTopic);
+
+            } catch (JsonProcessingException e) {
+                logger.severe("Error processing JSON: " + e.getMessage());
+            }
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             String dateString = formatter.format(comment.getCreatedDate());
             MetaData metaData = MetaData.newBuilder()
@@ -393,7 +460,7 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
                     .setAuthorId(request.getAuthorId() != null ? request.getAuthorId() : "")
                     .setCommentId(comment.getId() != null ? comment.getId().toString() : "")
                     .setContent(request.getContent() != null ? request.getContent() : "")
-                    .addAllTaggedUserIds(request.getTaggedUserIdsList())
+                    .addAllTaggedUserIds(userTag)
                     .addAllHashtags(comment.getHashtags() != null ? comment.getHashtags().getContent() : Collections.emptyList())
                     .addAllLinks(comment.getCommentLinks() != null ? comment.getCommentLinks().getContent() : Collections.emptyList())
                     .addAllImages(request.getImagesList())
@@ -422,7 +489,12 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
     public void updateComment(UpdateCommentRequest request,
             io.grpc.stub.StreamObserver<CreateCommentResponse> responseObserver) {
         try {
-            Comment comment = commentService.updateComment(request);
+            Comment comment =commentService.updateComment(request);
+            List<String> userTag = comment.getUserTags() != null
+                    ? comment.getUserTags().stream()
+                    .map(tag -> tag.getId().toString())
+                    .collect(Collectors.toList())
+                    : Collections.emptyList();
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             String dateString = formatter.format(comment.getLastModifiedDate());
             String commentIdStr = comment.getId() != null ? comment.getId().toString() : "";
@@ -434,7 +506,7 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
                     .setCommentId(commentIdStr)
                     .setAuthorId(request.getAuthorId() != null ? request.getAuthorId() : "")
                     .setContent(request.getContent() != null ? request.getContent() : "")
-                    .addAllTaggedUserIds(request.getTaggedUserIdsList())
+                    .addAllTaggedUserIds(userTag)
                     .addAllHashtags(comment.getHashtags() != null ? comment.getHashtags().getContent() : Collections.emptyList())
                     .addAllLinks(comment.getCommentLinks() != null ? comment.getCommentLinks().getContent() : Collections.emptyList())
                     .addAllImages(request.getImagesList())
@@ -524,7 +596,21 @@ public class GrpcPostService extends PostServiceGrpc.PostServiceImplBase {
         public void createReactionComment(CreateCommentReactionRequest request,
                         io.grpc.stub.StreamObserver<MetaData> responseObserver) {
                 try {
-                        commentService.createCommentReaction(request);
+                    commentService.createCommentReaction(request);
+                    String userName=grpcUserService.getUser(request.getUserId()).getName();
+                    Comment comment = commentService.getCommentById(UUID.fromString(request.getCommentId()));
+                    ObjectMapper mapper = new ObjectMapper();
+                    mapper.configure(SerializationFeature.FAIL_ON_SELF_REFERENCES, false);
+                    mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+                    try {
+                        CreateCommentReactionRequestDto reactionComment = new CreateCommentReactionRequestDto(request,userName,comment.getContent());
+                        String parsedValue = mapper.writeValueAsString(reactionComment);
+                        System.out.println("Reaction created successfully: " + parsedValue);
+                        this.producerService.sendMessage(parsedValue, reactionCommentTopic);
+
+                    } catch (JsonProcessingException e) {
+                        logger.severe("Error processing JSON: " + e.getMessage());
+                    }
                         MetaData metaData = MetaData.newBuilder()
                                         .setRespcode("200")
                                         .setMessage("Reaction created successfully")
