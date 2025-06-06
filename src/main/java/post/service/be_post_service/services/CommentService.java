@@ -81,11 +81,23 @@ public class CommentService {
         while (hashtagMatcher.find()) {
             hashtags.add(hashtagMatcher.group());
         }
+        String userTagRegex = "@\\[.*?\\]\\((.*?)\\)";
+        Pattern userTagPattern = Pattern.compile(userTagRegex);
+        Matcher userTagMatcher = userTagPattern.matcher(request.getContent());
+        List<CommentUserTag> userTags = new ArrayList<>();
+
+        while (userTagMatcher.find()) {
+            UUID userId = UUID.fromString(userTagMatcher.group(1));
+            int startIndex = userTagMatcher.start(1);
+            int endIndex = userTagMatcher.end(1) -1;
+            userTags.add(new CommentUserTag(userId, comment.getId(), startIndex, endIndex));
+        }
         createCommentLinks(comment.getId(),links);
         createCommentHashtags(comment.getId(),hashtags);
-        createCommentUserTags(comment.getId(), request.getTaggedUserIdsList());
         post.setCommentCount(post.getCommentCount()+1);
         postDomain.saveOrUpdate(post);
+        createCommentUserTags( userTags);
+        setComment(comment);
         return comment;
     }
     public Comment updateComment(UpdateCommentRequest request) {
@@ -131,9 +143,21 @@ public class CommentService {
         while (hashtagMatcher.find()) {
             hashtags.add(hashtagMatcher.group());
         }
+        String userTagRegex = "@\\[.*?\\]\\((.*?)\\)";
+        Pattern userTagPattern = Pattern.compile(userTagRegex);
+        Matcher userTagMatcher = userTagPattern.matcher(request.getContent());
+        List<CommentUserTag> userTags = new ArrayList<>();
+
+        while (userTagMatcher.find()) {
+            UUID userId = UUID.fromString(userTagMatcher.group(1));
+            int startIndex = userTagMatcher.start(1);
+            int endIndex = userTagMatcher.end(1) -1;
+            userTags.add(new CommentUserTag(userId, comment.getId(), startIndex, endIndex));
+        }
         updateCommentLinks(comment.getId(),links);
         updateCommentHashtags(comment.getId(), hashtags);
-        updateCommentUserTags(comment.getId(), request.getTaggedUserIdsList());
+        updateCommentUserTags(comment.getId(), userTags);
+        setComment(comment);
         return comment;
     }
     public List<Comment> getListCommentByPostId(UUID postID){
@@ -153,6 +177,10 @@ public class CommentService {
         if(comment==null){
             throw new IllegalArgumentException("Comment not found: " );
         }
+        boolean isValidReaction=isValidReactionType(request.getReactionType());
+        if(!isValidReaction){
+            throw new IllegalArgumentException("Invalid reaction type: " + request.getReactionType());
+        }
         List<UUID> listReaction=comment.getLikedUserIds();
         int likeCount=comment.getLikeCount();
         if(listReaction.contains(UUID.fromString(request.getUserId()))){
@@ -169,6 +197,21 @@ public class CommentService {
             commentReaction.setUserId(UUID.fromString(request.getUserId()));
             commentReaction.setReactionType(ReactionType.valueOf(request.getReactionType()));
             commentReactionDomain.create(commentReaction);
+        }
+    }
+    public Comment getCommentById(UUID commentId){
+        Comment comment =commentDomain.findOne(commentId);
+        if(comment==null){
+            throw new IllegalArgumentException("Comment not found: " );
+        }
+       return comment;
+    }
+    private boolean isValidReactionType(String input) {
+        try {
+            ReactionType.valueOf(input.toUpperCase());
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
         }
     }
     private void validateRequest(String content, String authorId) {
@@ -203,19 +246,21 @@ public class CommentService {
         commentHashtag.setCommentId(commentId);
         commentHastagDomain.create(commentHashtag);
     }
+    private void setComment(Comment comment){
+        CommentLink links = commentLinkDomain.getByCommentId(comment.getId());
+        CommentHastag hashtags = commentHastagDomain.getByCommentId(comment.getId());
+        List<CommentUserTag> userTags = commentUserTagDomain.getByCommentId(comment.getId());
+        comment.setCommentLinks(links);
+        comment.setUserTags(userTags);
+        comment.setHashtags(hashtags);
+    }
+    private void createCommentUserTags(List<CommentUserTag> usertag) {
 
-    private void createCommentUserTags(UUID commentId, List<String> taggedUserIds) {
-        if (taggedUserIds == null || taggedUserIds.isEmpty()) return;
-
-        for (String userIdStr : taggedUserIds) {
-            UUID userId = parseUUID(userIdStr, "Invalid user ID in tagged users");
-            if (grpcUserService.getUser(userId.toString()) == null) {
-                throw new IllegalArgumentException("Tagged user not found: " + userId);
+        for (CommentUserTag user : usertag) {
+            if (grpcUserService.getUser(user.getUser_id().toString()) == null) {
+                throw new IllegalArgumentException("Tagged user not found: " + user.getUser_id());
             }
-            CommentUserTag commentUserTag = new CommentUserTag();
-            commentUserTag.setComment_id(commentId);
-            commentUserTag.setUser_id(userId);
-            commentUserTagDomain.create(commentUserTag);
+            commentUserTagDomain.create(user);
         }
     }
     private void updateCommentLinks(UUID commentId,List<String> linksList) {
@@ -234,19 +279,14 @@ public class CommentService {
         commentHastagDomain.saveOrUpdate(commentHashtag);
     }
 
-    private void updateCommentUserTags(UUID commentId, List<String> taggedUserIds) {
-        if (taggedUserIds == null || taggedUserIds.isEmpty()) return;
+    private void updateCommentUserTags(UUID commentId, List<CommentUserTag> usertag) {
         List<CommentUserTag> userTags = commentUserTagDomain.getByCommentId(commentId);
         commentUserTagDomain.destroyAll(userTags.stream().map(CommentUserTag::getId).collect(Collectors.toList()));
-        for (String userIdStr : taggedUserIds) {
-            UUID userId = parseUUID(userIdStr, "Invalid user ID in tagged users");
-            if (grpcUserService.getUser(userId.toString()) == null) {
-                throw new IllegalArgumentException("Tagged user not found: " + userId);
+        for (CommentUserTag user : usertag) {
+            if (grpcUserService.getUser(user.getUser_id().toString()) == null) {
+                throw new IllegalArgumentException("Tagged user not found: " + user.getUser_id());
             }
-            CommentUserTag commentUserTag = new CommentUserTag();
-            commentUserTag.setComment_id(commentId);
-            commentUserTag.setUser_id(userId);
-            commentUserTagDomain.saveOrUpdate(commentUserTag);
+            commentUserTagDomain.saveOrUpdate(user);
         }
     }
     private boolean isValidUrl(String url) {
